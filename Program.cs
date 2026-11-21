@@ -262,7 +262,7 @@ sealed class TranslatorWindow : Window
 
         var toggle = new FrameworkElementFactory(typeof(ToggleButton));
         toggle.SetValue(ToggleButton.FocusableProperty, false);
-        toggle.SetValue(UIElement.BackgroundProperty, Brushes.Transparent);
+        toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
         var toggleBorder = new FrameworkElementFactory(typeof(Border));
         toggleBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
