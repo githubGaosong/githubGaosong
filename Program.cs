@@ -46,7 +46,7 @@ sealed class TranslatorWindow : Window
     ImageBrush? uploadedBackground;
     TextBlock? titleText, inputHint, outputLabel;
     Button? hideButton, pinButton;
-    string currentBackground = "彩虹渐变";
+    string currentBackground = "半透明玻璃 · 默认";
     readonly TextBlock charCount = new();
     readonly TextBlock status = new();
     readonly Button translateButton = new();
@@ -169,7 +169,7 @@ sealed class TranslatorWindow : Window
         var outputDivider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(55,255,255,255)),
             VerticalAlignment = VerticalAlignment.Bottom };
         outputHeader.Children.Add(outputDivider);
-        StyleEditor(translated, true); translated.FontSize = 16; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
+        StyleEditor(translated, false); translated.FontSize = 16; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
         // Match the input editor's 20px panel inset so both vertical scrollbars share one vertical line.
         translated.Margin = new Thickness(0, 0, 20, 0);
         translated.Background = Brushes.Transparent; translated.BorderThickness = new Thickness(0);
@@ -240,7 +240,11 @@ sealed class TranslatorWindow : Window
 
     void SetupBackgroundSelector()
     {
-        backgroundChoice.Items.Add("背景 · 彩虹渐变");
+        backgroundChoice.Items.Add("半透明玻璃 · 默认");
+        backgroundChoice.Items.Add("彩虹渐变");
+        backgroundChoice.Items.Add("冰透白");
+        backgroundChoice.Items.Add("雾霭蓝");
+        backgroundChoice.Items.Add("暮光紫");
         backgroundChoice.Items.Add("深海蓝");
         backgroundChoice.Items.Add("极光紫");
         backgroundChoice.Items.Add("樱花粉");
@@ -255,19 +259,35 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Items.Add("奶油黄");
         backgroundChoice.Items.Add("上传图片…");
         backgroundChoice.SelectedIndex = 0;
-        backgroundChoice.Width = 112;
-        backgroundChoice.Height = 30;
-        backgroundChoice.FontSize = 11;
+        backgroundChoice.Width = 154;
+        backgroundChoice.Height = 34;
+        backgroundChoice.FontSize = 12;
+        backgroundChoice.FontWeight = FontWeights.SemiBold;
         backgroundChoice.Foreground = Brushes.White;
-        backgroundChoice.Background = new SolidColorBrush(Color.FromArgb(52, 255, 255, 255));
-        backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 235, 245, 255));
-        backgroundChoice.BorderThickness = new Thickness(1);
-        backgroundChoice.Padding = new Thickness(5, 0, 5, 0);
+        backgroundChoice.Background = new SolidColorBrush(Color.FromArgb(58, 255, 255, 255));
+        backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(145, 220, 238, 255));
+        backgroundChoice.BorderThickness = new Thickness(1.2);
+        backgroundChoice.Padding = new Thickness(10, 0, 26, 0);
         backgroundChoice.VerticalContentAlignment = VerticalAlignment.Center;
+        backgroundChoice.HorizontalContentAlignment = HorizontalAlignment.Left;
+        backgroundChoice.Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 2, Opacity = 0.2, Color = Colors.Black };
+        backgroundChoice.Template = LanguageComboTemplate();
+        backgroundChoice.ItemContainerStyle = new Style(typeof(ComboBoxItem))
+        {
+            Setters =
+            {
+                new Setter(Control.ForegroundProperty, Brushes.White),
+                new Setter(Control.BackgroundProperty, Brushes.Transparent),
+                new Setter(Control.PaddingProperty, new Thickness(14, 10, 14, 10)),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left),
+                new Setter(Control.FontSizeProperty, 12.0),
+                new Setter(Control.TemplateProperty, LanguageItemTemplate())
+            }
+        };
         backgroundChoice.ToolTip = "选择窗口背景颜色";
         backgroundChoice.SelectionChanged += (_, _) =>
         {
-            string choice = backgroundChoice.SelectedIndex == 0 ? "彩虹渐变" : backgroundChoice.SelectedItem?.ToString() ?? "彩虹渐变";
+            string choice = backgroundChoice.SelectedItem?.ToString() ?? "半透明玻璃 · 默认";
             if (choice == "上传图片…") { ChooseBackgroundImage(); return; }
             currentBackground = choice;
             ApplyBackground(choice);
@@ -279,6 +299,10 @@ sealed class TranslatorWindow : Window
         if (backdropLayer == null) return;
         Brush brush = choice switch
         {
+            "半透明玻璃 · 默认" => new LinearGradientBrush(Color.FromArgb(112, 225, 240, 255), Color.FromArgb(82, 125, 165, 205), 35),
+            "冰透白" => new LinearGradientBrush(Color.FromArgb(118, 245, 250, 255), Color.FromArgb(78, 170, 205, 235), 35),
+            "雾霭蓝" => new LinearGradientBrush(Color.FromArgb(138, 70, 125, 165), Color.FromArgb(92, 125, 185, 210), 35),
+            "暮光紫" => new LinearGradientBrush(Color.FromArgb(145, 90, 65, 145), Color.FromArgb(95, 170, 115, 185), 35),
             "深海蓝" => new LinearGradientBrush(Color.FromArgb(235, 8, 35, 75), Color.FromArgb(235, 20, 105, 145), 35),
             "极光紫" => new LinearGradientBrush(Color.FromArgb(235, 45, 25, 90), Color.FromArgb(235, 135, 65, 155), 35),
             "樱花粉" => new LinearGradientBrush(Color.FromArgb(235, 100, 38, 72), Color.FromArgb(235, 220, 125, 165), 35),
@@ -444,11 +468,22 @@ sealed class TranslatorWindow : Window
 
         var selected = new FrameworkElementFactory(typeof(ContentPresenter));
         selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
-        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 0, 22, 0));
+        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(12, 0, 28, 0));
         selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
         grid.AppendChild(selected);
+
+        var arrow = new FrameworkElementFactory(typeof(TextBlock));
+        arrow.SetValue(TextBlock.TextProperty, "⌄");
+        arrow.SetValue(TextBlock.FontSizeProperty, 17.0);
+        arrow.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
+        arrow.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromArgb(225, 245, 250, 255)));
+        arrow.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+        arrow.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        arrow.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 12, 3));
+        arrow.SetValue(UIElement.IsHitTestVisibleProperty, false);
+        grid.AppendChild(arrow);
 
         var popup = new FrameworkElementFactory(typeof(Popup));
         popup.Name = "PART_Popup";
