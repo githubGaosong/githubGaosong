@@ -77,6 +77,28 @@ sealed class TranslatorWindow : Window
         TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
 
         var root = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
+        // Drag the window by pressing and moving on any non-interactive surface.
+        // Editors, selectors, scrollbars and buttons retain their normal behavior.
+        root.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            if (IsInteractiveElement(e.OriginalSource as DependencyObject))
+            {
+                dragPending = false;
+                return;
+            }
+            dragStart = e.GetPosition(this);
+            dragPending = true;
+        };
+        root.PreviewMouseMove += (_, e) =>
+        {
+            if (!dragPending || e.LeftButton != MouseButtonState.Pressed) return;
+            Point current = e.GetPosition(this);
+            if (Math.Abs(current.X - dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                Math.Abs(current.Y - dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+            dragPending = false;
+            try { DragMove(); } catch (InvalidOperationException) { }
+        };
+        root.PreviewMouseLeftButtonUp += (_, _) => dragPending = false;
         TextOptions.SetTextFormattingMode(root, TextFormattingMode.Display);
         TextOptions.SetTextRenderingMode(root, TextRenderingMode.Auto);
         root.SizeChanged += (_, _) => root.Clip = new RectangleGeometry(
@@ -454,7 +476,7 @@ sealed class TranslatorWindow : Window
                 new Setter(Control.ForegroundProperty, Brushes.White),
                 new Setter(Control.BackgroundProperty, Brushes.Transparent),
                 new Setter(Control.PaddingProperty, new Thickness(14, 10, 14, 10)),
-                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center),
                 new Setter(Control.FontSizeProperty, 13.0),
                 new Setter(Control.FontWeightProperty, FontWeights.Medium),
                 new Setter(Control.TemplateProperty, LanguageItemTemplate())
