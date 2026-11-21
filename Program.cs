@@ -32,25 +32,6 @@ sealed class MainWindow : Form
     [DllImport("user32.dll")]
     static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-    // Windows acrylic backdrop (no neon glow); falls back to a translucent window if unavailable.
-    [StructLayout(LayoutKind.Sequential)]
-    struct AccentPolicy
-    {
-        public int AccentState;
-        public int AccentFlags;
-        public int GradientColor;
-        public int AnimationId;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    struct WindowCompositionAttributeData
-    {
-        public int Attribute;
-        public IntPtr Data;
-        public int SizeOfData;
-    }
-    [DllImport("user32.dll", SetLastError = true)]
-    static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
-
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
     static readonly Color Glass = Color.FromArgb(36, 43, 52);
     static readonly Color Surface = Color.FromArgb(90, 101, 113);
@@ -69,17 +50,18 @@ sealed class MainWindow : Form
 
     public MainWindow()
     {
-        Text = "Translator Little Tool";
+        Text = "Translator";
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(680, 590);
         MinimumSize = new Size(500, 460);
         TopMost = true;
         BackColor = Glass;
+        Opacity = 0.82; // Uniform transparency for the entire window and all controls.
         ForeColor = TextColor;
         Font = new Font("Microsoft YaHei UI", 10F);
         Padding = new Padding(18);
 
-        var header = new Label { Text = "TRANSLATOR LITTLE TOOL", Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Bold), ForeColor = TextColor, AutoSize = true };
+        var header = new Label { Text = "TRANSLATOR", Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Bold), ForeColor = TextColor, AutoSize = true };
         header.SetBounds(18, 14, 260, 30);
 
         var languageLabel = new Label { Text = "目标语言", AutoSize = true, ForeColor = Muted };
@@ -136,36 +118,10 @@ sealed class MainWindow : Form
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        ApplyAcrylic();
         bool f5 = RegisterHotKey(Handle, HOTKEY_TRANSLATE, MOD_NOREPEAT, VK_F5);
         bool f4 = RegisterHotKey(Handle, HOTKEY_WINDOW, MOD_NOREPEAT, VK_F4);
         if (!f5 || !f4)
             status.Text = "快捷键注册失败：可能被其他软件占用。";
-    }
-
-    void ApplyAcrylic()
-    {
-        try
-        {
-            var accent = new AccentPolicy
-            {
-                AccentState = 4, // ACCENT_ENABLE_ACRYLICBLURBEHIND
-                AccentFlags = 2,
-                GradientColor = unchecked((int)0xCC252B32),
-                AnimationId = 0
-            };
-            int size = Marshal.SizeOf<AccentPolicy>();
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-            try
-            {
-                Marshal.StructureToPtr(accent, ptr, false);
-                var data = new WindowCompositionAttributeData { Attribute = 19, Data = ptr, SizeOfData = size };
-                if (SetWindowCompositionAttribute(Handle, ref data) == 0)
-                    Opacity = 0.94;
-            }
-            finally { Marshal.FreeHGlobal(ptr); }
-        }
-        catch { Opacity = 0.94; }
     }
 
     protected override void WndProc(ref Message m)
