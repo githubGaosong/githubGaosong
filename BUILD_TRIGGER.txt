@@ -1,1 +1,0 @@
-Trigger Windows self-contained EXE build.
