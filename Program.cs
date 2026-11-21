@@ -155,7 +155,7 @@ sealed class TranslatorWindow : Window
         var outputDivider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(55,255,255,255)),
             VerticalAlignment = VerticalAlignment.Bottom };
         outputHeader.Children.Add(outputDivider);
-        StyleEditor(translated, true); translated.FontSize = 14; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
+        StyleEditor(translated, true); translated.FontSize = 16; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
         // Match the input editor's 20px panel inset so both vertical scrollbars share one vertical line.
         translated.Margin = new Thickness(0, 0, 20, 0);
         translated.Background = Brushes.Transparent; translated.BorderThickness = new Thickness(0);
