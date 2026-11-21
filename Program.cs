@@ -112,7 +112,7 @@ sealed class TranslatorWindow : Window
         };
         var layout = new Grid { ClipToBounds = false, SnapsToDevicePixels = true };
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(72) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
@@ -128,7 +128,7 @@ sealed class TranslatorWindow : Window
         titleText = title;
         header.Children.Add(title);
         SetupBackgroundSelector();
-        backgroundChoice.Margin = new Thickness(0, 0, 8, 0);
+        backgroundChoice.Margin = new Thickness(0, 0, 18, 0);
         Grid.SetColumn(backgroundChoice, 1); header.Children.Add(backgroundChoice);
         var minimize = HeaderButton("—", 40); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
         Grid.SetColumn(minimize, 2); header.Children.Add(minimize);
@@ -136,7 +136,7 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
-        var languageRow = new Grid { Margin = new Thickness(6, 4, 6, 8), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 54 };
+        var languageRow = new Grid { Margin = new Thickness(10, 3, 10, 7), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 48 };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -151,7 +151,7 @@ sealed class TranslatorWindow : Window
         sourceLang.VerticalAlignment = VerticalAlignment.Center;
         targetLang.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
-        var swap = new TextBlock { Text = "→", FontSize = 23, Foreground = WhiteBrush,
+        var swap = new TextBlock { Text = "→", FontSize = 20, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(10, 0, 10, 0) };
         Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
@@ -293,9 +293,9 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Items.Add("奶油黄");
         backgroundChoice.Items.Add("上传图片…");
         backgroundChoice.SelectedIndex = 0;
-        backgroundChoice.Width = 142;
-        backgroundChoice.Height = 30;
-        backgroundChoice.FontSize = 11;
+        backgroundChoice.Width = 116;
+        backgroundChoice.Height = 28;
+        backgroundChoice.FontSize = 10;
         backgroundChoice.FontWeight = FontWeights.SemiBold;
         backgroundChoice.Foreground = Brushes.White;
         backgroundChoice.Background = new LinearGradientBrush(Color.FromArgb(92, 92, 158, 205), Color.FromArgb(62, 145, 112, 190), 25);
@@ -460,7 +460,7 @@ sealed class TranslatorWindow : Window
     {
         foreach (var language in Languages) box.Items.Add(language.Name);
         box.SelectedItem = selected == "自动检测" ? Languages[0].Name : Languages[2].Name;
-        box.Width = double.NaN; box.Height = 44; box.FontSize = 13; box.FontWeight = FontWeights.SemiBold;
+        box.Width = double.NaN; box.Height = 40; box.FontSize = 12; box.FontWeight = FontWeights.SemiBold;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(115, 225, 238, 255));
         box.BorderThickness = new Thickness(1.2); box.HorizontalContentAlignment = HorizontalAlignment.Center;
