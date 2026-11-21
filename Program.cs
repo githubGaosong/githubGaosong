@@ -171,6 +171,8 @@ sealed class TranslatorWindow : Window
             VerticalAlignment = VerticalAlignment.Bottom };
         outputHeader.Children.Add(outputDivider);
         StyleEditor(translated, true); translated.FontSize = 16; translated.FontWeight = FontWeights.Medium; translated.Padding = new Thickness(16,12,16,12);
+        // Match the input editor's 20px panel inset so both vertical scrollbars share one vertical line.
+        translated.Margin = new Thickness(0, 0, 20, 0);
         translated.Background = Brushes.Transparent; translated.BorderThickness = new Thickness(0);
         translated.ToolTip = "翻译结果将显示在这里...";
         Grid.SetRow(translated,1); outputGrid.Children.Add(translated);
