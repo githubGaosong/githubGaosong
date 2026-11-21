@@ -136,9 +136,9 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
-        var languageRow = new Grid { Margin = new Thickness(10, 3, 10, 7), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 48 };
+        var languageRow = new Grid { Margin = new Thickness(14, 4, 14, 8), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 50 };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(52) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         SetupLanguage(sourceLang, "自动检测");
         SetupLanguage(targetLang, "简体中文");
@@ -146,14 +146,15 @@ sealed class TranslatorWindow : Window
         sourceLang.Width = double.NaN; targetLang.Width = double.NaN;
         sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
         targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
-        sourceLang.Margin = new Thickness(4, 2, 4, 2);
-        targetLang.Margin = new Thickness(4, 2, 4, 2);
+        sourceLang.Margin = new Thickness(0, 2, 0, 2);
+        targetLang.Margin = new Thickness(0, 2, 0, 2);
+        sourceLang.Height = 42; targetLang.Height = 42;
         sourceLang.VerticalAlignment = VerticalAlignment.Center;
         targetLang.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
         var swap = new TextBlock { Text = "→", FontSize = 20, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(10, 0, 10, 0) };
+            Margin = new Thickness(0) };
         Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
         targetLang.SelectionChanged += (_, _) => UpdateUiLanguage();
         Grid.SetColumn(targetLang, 2); languageRow.Children.Add(targetLang);
