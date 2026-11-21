@@ -255,40 +255,50 @@ sealed class TranslatorWindow : Window
 
     static ControlTemplate LanguageComboTemplate()
     {
+        // Keep the ToggleButton's visual tree inside its own ControlTemplate.
+        // Previously its Border was appended as a child of ToggleButton itself,
+        // which can prevent the dropdown toggle from receiving clicks reliably.
         var grid = new FrameworkElementFactory(typeof(Grid));
+
         var toggle = new FrameworkElementFactory(typeof(ToggleButton));
-        toggle.SetValue(ToggleButton.FocusableProperty, true);
-        toggle.SetValue(UIElement.IsHitTestVisibleProperty, true);
-        toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
+        toggle.SetValue(ToggleButton.FocusableProperty, false);
+        toggle.SetValue(UIElement.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
+        var toggleBorder = new FrameworkElementFactory(typeof(Border));
+        toggleBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
+        toggleBorder.SetValue(Border.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.TemplateProperty, new ControlTemplate(typeof(ToggleButton))
         {
-            VisualTree = new FrameworkElementFactory(typeof(Border))
+            VisualTree = toggleBorder
         });
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
-        { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent, Mode = System.Windows.Data.BindingMode.TwoWay });
-        var chrome = new FrameworkElementFactory(typeof(Border));
-        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
-        chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
-        chrome.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
-        chrome.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
-        toggle.AppendChild(chrome);
+        {
+            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent,
+            Mode = System.Windows.Data.BindingMode.TwoWay
+        });
         grid.AppendChild(toggle);
 
         var selected = new FrameworkElementFactory(typeof(ContentPresenter));
         selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
         selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        selected.SetValue(ContentPresenter.IsHitTestVisibleProperty, false);
+        selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
         grid.AppendChild(selected);
 
         var popup = new FrameworkElementFactory(typeof(Popup));
+        popup.Name = "PART_Popup";
         popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
         popup.SetValue(Popup.AllowsTransparencyProperty, true);
         popup.SetValue(Popup.FocusableProperty, false);
         popup.SetValue(Popup.PopupAnimationProperty, PopupAnimation.Fade);
+        popup.SetBinding(Popup.PlacementTargetProperty, new System.Windows.Data.Binding
+        {
+            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
+        });
         popup.SetBinding(Popup.IsOpenProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
-        { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+        {
+            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
+        });
         var popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(248, 24, 31, 44)));
         popupBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(210, 205, 220, 242)));
@@ -300,11 +310,11 @@ sealed class TranslatorWindow : Window
         popupScroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
         popupScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
         popupScroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
-        var items = new FrameworkElementFactory(typeof(ItemsPresenter));
-        popupScroll.AppendChild(items);
+        popupScroll.AppendChild(new FrameworkElementFactory(typeof(ItemsPresenter)));
         popupBorder.AppendChild(popupScroll);
         popup.AppendChild(popupBorder);
         grid.AppendChild(popup);
+
         return new ControlTemplate(typeof(ComboBox)) { VisualTree = grid };
     }
 
