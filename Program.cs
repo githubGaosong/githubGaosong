@@ -22,7 +22,7 @@ sealed class MainWindow : Form
 {
     const int WM_HOTKEY = 0x0312;
     const int HOTKEY_TRANSLATE = 1;
-    const int HOTKEY_OVERLAY = 2;
+    const int HOTKEY_RESULT = 2;
     const uint MOD_NOREPEAT = 0x4000;
     const uint VK_F4 = 0x73;
     const uint VK_F5 = 0x74;
@@ -34,38 +34,54 @@ sealed class MainWindow : Form
 
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
+    readonly Label sourceLabel = new() { Text = "游戏原文", AutoSize = true };
     readonly TextBox source = new() { Multiline = true, ScrollBars = ScrollBars.Vertical };
-    readonly Button translateButton = new() { Text = "翻译 (F5)", Height = 34 };
-    readonly Label status = new() { AutoSize = true, Text = "粘贴游戏文字，按 F5 翻译；F4 显示/隐藏弹窗。" };
-    readonly OverlayWindow overlay = new();
+    readonly Label resultLabel = new() { Text = "中文翻译", AutoSize = true };
+    readonly TextBox translated = new()
+    {
+        Multiline = true,
+        ReadOnly = true,
+        ScrollBars = ScrollBars.Vertical,
+        BackColor = SystemColors.Window,
+        Font = new Font("Microsoft YaHei UI", 11F)
+    };
+    readonly Button translateButton = new() { Text = "翻译 (F5)", Height = 36 };
+    readonly Label status = new() { AutoSize = true, Text = "粘贴游戏文字，按 F5 翻译；F4 显示/隐藏译文区域。" };
     CancellationTokenSource? requestCts;
+    bool resultVisible = true;
 
     public MainWindow()
     {
         Text = "GameTranslator";
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(520, 330);
-        MinimumSize = new Size(420, 280);
+        ClientSize = new Size(620, 570);
+        MinimumSize = new Size(460, 440);
         Font = new Font("Microsoft YaHei UI", 9F);
 
-        source.SetBounds(12, 12, 496, 215);
+        sourceLabel.SetBounds(14, 12, 580, 22);
+        sourceLabel.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+        source.SetBounds(14, 38, 592, 185);
         source.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         source.PlaceholderText = "在这里粘贴游戏中的文字…";
 
-        translateButton.SetBounds(12, 238, 120, 34);
+        resultLabel.SetBounds(14, 236, 580, 22);
+        resultLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+        translated.SetBounds(14, 262, 592, 220);
+        translated.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+        translateButton.SetBounds(14, 500, 126, 36);
         translateButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         translateButton.Click += async (_, _) => await TranslateAsync();
 
-        status.SetBounds(145, 247, 360, 24);
+        status.SetBounds(154, 509, 450, 24);
         status.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-        Controls.AddRange(new Control[] { source, translateButton, status });
+        Controls.AddRange(new Control[] { sourceLabel, source, resultLabel, translated, translateButton, status });
         FormClosing += (_, _) =>
         {
             requestCts?.Cancel();
-            overlay.Close();
             UnregisterHotKey(Handle, HOTKEY_TRANSLATE);
-            UnregisterHotKey(Handle, HOTKEY_OVERLAY);
+            UnregisterHotKey(Handle, HOTKEY_RESULT);
         };
     }
 
@@ -73,7 +89,7 @@ sealed class MainWindow : Form
     {
         base.OnHandleCreated(e);
         bool f5 = RegisterHotKey(Handle, HOTKEY_TRANSLATE, MOD_NOREPEAT, VK_F5);
-        bool f4 = RegisterHotKey(Handle, HOTKEY_OVERLAY, MOD_NOREPEAT, VK_F4);
+        bool f4 = RegisterHotKey(Handle, HOTKEY_RESULT, MOD_NOREPEAT, VK_F4);
         if (!f5 || !f4)
             status.Text = "快捷键注册失败：可能被其他软件占用。";
     }
@@ -84,10 +100,18 @@ sealed class MainWindow : Form
         {
             if (m.WParam.ToInt32() == HOTKEY_TRANSLATE)
                 _ = TranslateAsync();
-            else if (m.WParam.ToInt32() == HOTKEY_OVERLAY)
-                overlay.Toggle();
+            else if (m.WParam.ToInt32() == HOTKEY_RESULT)
+                ToggleResult();
         }
         base.WndProc(ref m);
+    }
+
+    void ToggleResult()
+    {
+        resultVisible = !resultVisible;
+        resultLabel.Visible = resultVisible;
+        translated.Visible = resultVisible;
+        status.Text = resultVisible ? "译文区域已显示。" : "译文区域已隐藏。";
     }
 
     async Task TranslateAsync()
@@ -126,12 +150,12 @@ sealed class MainWindow : Form
                 !responseData.TryGetProperty("translatedText", out var translatedElement))
                 throw new InvalidOperationException("翻译接口没有返回译文，请稍后重试。");
 
-            string translated = WebUtility.HtmlDecode(translatedElement.GetString() ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(translated))
+            string result = WebUtility.HtmlDecode(translatedElement.GetString() ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(result))
                 throw new InvalidOperationException("接口返回的译文为空。请检查原文是否过长，或稍后重试。");
 
-            overlay.SetText(translated);
-            overlay.ShowOverlay();
+            translated.Text = result;
+            if (!resultVisible) ToggleResult();
             status.Text = "翻译完成。";
         }
         catch (OperationCanceledException) { }
@@ -143,61 +167,5 @@ sealed class MainWindow : Form
         {
             translateButton.Enabled = true;
         }
-    }
-}
-
-sealed class OverlayWindow : Form
-{
-    readonly Label result = new()
-    {
-        Dock = DockStyle.Fill,
-        ForeColor = Color.White,
-        BackColor = Color.Transparent,
-        TextAlign = ContentAlignment.MiddleLeft,
-        Font = new Font("Microsoft YaHei UI", 14F),
-        Padding = new Padding(14),
-        AutoEllipsis = true
-    };
-
-    [DllImport("user32.dll")]
-    static extern bool ReleaseCapture();
-    [DllImport("user32.dll")]
-    static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
-
-    public OverlayWindow()
-    {
-        FormBorderStyle = FormBorderStyle.None;
-        ShowInTaskbar = false;
-        TopMost = true;
-        BackColor = Color.FromArgb(28, 30, 36);
-        Opacity = 0.92;
-        StartPosition = FormStartPosition.Manual;
-        Bounds = new Rectangle(80, 80, 560, 150);
-        Controls.Add(result);
-        result.MouseDown += DragWindow;
-        MouseDown += DragWindow;
-    }
-
-    void DragWindow(object? sender, MouseEventArgs e)
-    {
-        if (e.Button == MouseButtons.Left)
-        {
-            ReleaseCapture();
-            SendMessage(Handle, 0xA1, (IntPtr)2, IntPtr.Zero);
-        }
-    }
-
-    public void SetText(string text) => result.Text = text;
-
-    public void ShowOverlay()
-    {
-        if (!Visible) Show();
-        TopMost = true;
-    }
-
-    public void Toggle()
-    {
-        if (Visible) Hide();
-        else ShowOverlay();
     }
 }
