@@ -514,7 +514,9 @@ sealed class TranslatorWindow : Window
         });
         popup.SetBinding(Popup.IsOpenProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
         {
-            RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+            // Popup is hosted in a separate presentation source; the template
+            // parent binding is reliable where FindAncestor cannot cross Popup.
+            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
         });
         var popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, new LinearGradientBrush(Color.FromArgb(250, 25, 43, 67), Color.FromArgb(248, 48, 54, 82), 25));
