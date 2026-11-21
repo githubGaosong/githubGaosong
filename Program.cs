@@ -27,10 +27,12 @@ sealed class TranslatorWindow : Window
     const int WmHotkey = 0x0312;
     const int HotkeyTranslate = 1, HotkeyToggle = 2;
     const uint NoRepeat = 0x4000, VkF4 = 0x73, VkF5 = 0x74;
-    const int DwmwaSystemBackdropType = 38, DwmwaUseImmersiveDarkMode = 20, DwmwaCornerPreference = 33;
+    const int WmNcHitTest = 0x0084;
+    const int HtLeft = 10, HtRight = 11, HtTop = 12, HtTopLeft = 13, HtTopRight = 14, HtBottom = 15, HtBottomLeft = 16, HtBottomRight = 17;
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
     [DllImport("user32.dll", SetLastError = true)] static extern bool RegisterHotKey(IntPtr hWnd, int id, uint modifiers, uint vk);
     [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-    [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(25) };
     readonly TextBox source = new();
@@ -44,37 +46,31 @@ sealed class TranslatorWindow : Window
 
     static readonly Color White = Color.FromRgb(246, 249, 253);
     static readonly Color Muted = Color.FromRgb(190, 205, 221);
-    static readonly Brush Glass = new SolidColorBrush(Color.FromArgb(214, 25, 43, 63));
-    static readonly Brush FieldBrush = new SolidColorBrush(Color.FromArgb(74, 8, 22, 38));
-    static readonly Brush ResultBrush = new SolidColorBrush(Color.FromArgb(62, 44, 103, 145));
+    static readonly Brush Glass = new LinearGradientBrush(Color.FromArgb(222, 38, 61, 84), Color.FromArgb(207, 19, 39, 59), 90);
+    static readonly Brush FieldBrush = new SolidColorBrush(Color.FromArgb(58, 8, 22, 38));
+    static readonly Brush ResultBrush = new SolidColorBrush(Color.FromArgb(72, 44, 103, 145));
     static readonly Brush Blue = new SolidColorBrush(Color.FromRgb(74, 164, 246));
 
     public TranslatorWindow()
     {
         Title = "Tanslator";
-        Width = 850; Height = 660; MinWidth = 650; MinHeight = 560;
+        Width = 640; Height = 520; MinWidth = 520; MinHeight = 440;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.CanResize;
-        AllowsTransparency = false;
-        Background = Glass;
+        AllowsTransparency = true;
+        Background = Brushes.Transparent;
         Foreground = new SolidColorBrush(White);
         FontFamily = new FontFamily("Microsoft YaHei UI");
         FontSize = 14;
         Topmost = true;
         ShowInTaskbar = true;
 
-        WindowChrome.SetWindowChrome(this, new WindowChrome {
-            CaptionHeight = 0, ResizeBorderThickness = new Thickness(8),
-            CornerRadius = new CornerRadius(18), GlassFrameThickness = new Thickness(0),
-            UseAeroCaptionButtons = false
-        });
-
         var outer = new Border {
             Background = Glass, CornerRadius = new CornerRadius(18),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(210, 206, 220, 234)),
-            BorderThickness = new Thickness(1.4), Padding = new Thickness(22),
-            Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 4, Opacity = .22, Color = Colors.Black }
+            BorderBrush = new LinearGradientBrush(Color.FromArgb(190, 238, 247, 255), Color.FromArgb(75, 190, 218, 244), 90),
+            BorderThickness = new Thickness(1), Padding = new Thickness(18),
+            Effect = new DropShadowEffect { BlurRadius = 20, ShadowDepth = 3, Opacity = .18, Color = Colors.Black }
         };
         var layout = new Grid();
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(62) });
@@ -93,10 +89,12 @@ sealed class TranslatorWindow : Window
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var icon = MakeTIcon();
-        icon.Margin = new Thickness(0, 0, 16, 0);
+        icon.Margin = new Thickness(0, 0, 13, 0);
+        icon.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } } ;
         header.Children.Add(icon);
-        var title = new TextBlock { Text = "Tanslator", FontSize = 28, FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(White), VerticalAlignment = VerticalAlignment.Center };
+        var title = new TextBlock { Text = "Tanslator", FontSize = 25, FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(White), VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.SizeAll };
+        title.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } };
         Grid.SetColumn(title, 1); header.Children.Add(title);
 
         direction.Items.Add("英文  →  简体中文");
@@ -165,7 +163,7 @@ sealed class TranslatorWindow : Window
             hwndSource?.AddHook(WndProc);
             RegisterHotKey(handle, HotkeyTranslate, NoRepeat, VkF5);
             RegisterHotKey(handle, HotkeyToggle, NoRepeat, VkF4);
-            ApplyBackdrop(handle);
+
         };
         Closed += (_, _) => {
             request?.Cancel();
@@ -211,17 +209,13 @@ sealed class TranslatorWindow : Window
         box.CaretBrush = Brushes.White;
     }
 
-    static void ApplyBackdrop(IntPtr handle)
-    {
-        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) return;
-        int dark = 1, corner = 2, backdrop = 3;
-        DwmSetWindowAttribute(handle, DwmwaUseImmersiveDarkMode, ref dark, sizeof(int));
-        DwmSetWindowAttribute(handle, DwmwaCornerPreference, ref corner, sizeof(int));
-        DwmSetWindowAttribute(handle, DwmwaSystemBackdropType, ref backdrop, sizeof(int));
-    }
-
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (msg == WmNcHitTest && ResizeHitTest(hwnd, lParam, out int hit))
+        {
+            handled = true;
+            return new IntPtr(hit);
+        }
         if (msg == WmHotkey)
         {
             if (wParam.ToInt32() == HotkeyTranslate) _ = TranslateAsync();
@@ -232,6 +226,29 @@ sealed class TranslatorWindow : Window
             }
         }
         return IntPtr.Zero;
+    }
+
+    bool ResizeHitTest(IntPtr hwnd, IntPtr lParam, out int hit)
+    {
+        hit = 0;
+        if (!GetWindowRect(hwnd, out RECT r)) return false;
+        long packed = lParam.ToInt64();
+        int x = unchecked((short)(packed & 0xffff));
+        int y = unchecked((short)((packed >> 16) & 0xffff));
+        const int edge = 9;
+        bool left = x >= r.Left && x < r.Left + edge;
+        bool right = x < r.Right && x >= r.Right - edge;
+        bool top = y >= r.Top && y < r.Top + edge;
+        bool bottom = y < r.Bottom && y >= r.Bottom - edge;
+        if (top && left) hit = HtTopLeft;
+        else if (top && right) hit = HtTopRight;
+        else if (bottom && left) hit = HtBottomLeft;
+        else if (bottom && right) hit = HtBottomRight;
+        else if (left) hit = HtLeft;
+        else if (right) hit = HtRight;
+        else if (top) hit = HtTop;
+        else if (bottom) hit = HtBottom;
+        return hit != 0;
     }
 
     async Task TranslateAsync()
