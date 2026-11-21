@@ -120,10 +120,12 @@ sealed class TranslatorWindow : Window
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         SetupLanguage(sourceLang, "自动检测");
         SetupLanguage(targetLang, "简体中文");
-        sourceLang.Width = 190; targetLang.Width = 190;
-        sourceLang.HorizontalAlignment = HorizontalAlignment.Center;
-        targetLang.HorizontalAlignment = HorizontalAlignment.Center;
-        languageRow.HorizontalAlignment = HorizontalAlignment.Center;
+        // Responsive language selectors: use the available width instead of fixed widths.
+        sourceLang.Width = double.NaN; targetLang.Width = double.NaN;
+        sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
+        targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
+        sourceLang.Margin = new Thickness(3, 0, 3, 0);
+        targetLang.Margin = new Thickness(3, 0, 3, 0);
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
         var swap = new TextBlock { Text = "→", FontSize = 25, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
@@ -465,13 +467,18 @@ sealed class TranslatorWindow : Window
         toggle.SetValue(ToggleButton.FocusableProperty, false);
         toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
+        var toggleSurface = new FrameworkElementFactory(typeof(Border));
+        // A non-null transparent background is essential: otherwise the surface
+        // does not participate in hit testing and the selector cannot be opened.
+        toggleSurface.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        toggleSurface.SetValue(Border.BorderThicknessProperty, new Thickness(0));
         toggle.SetValue(Control.TemplateProperty, new ControlTemplate(typeof(ToggleButton))
         {
-            VisualTree = new FrameworkElementFactory(typeof(Border))
+            VisualTree = toggleSurface
         });
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
         {
-            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent,
+            RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(ComboBox), 1),
             Mode = System.Windows.Data.BindingMode.TwoWay
         });
         grid.AppendChild(toggle);
@@ -507,7 +514,7 @@ sealed class TranslatorWindow : Window
         });
         popup.SetBinding(Popup.IsOpenProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
         {
-            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
+            RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
         });
         var popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, new LinearGradientBrush(Color.FromArgb(250, 25, 43, 67), Color.FromArgb(248, 48, 54, 82), 25));
@@ -538,13 +545,19 @@ sealed class TranslatorWindow : Window
         border.SetValue(Border.RenderTransformProperty, new ScaleTransform(1, 1));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         var content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        content.SetValue(UIElement.IsHitTestVisibleProperty, false);
         border.AppendChild(content);
         var template = new ControlTemplate(typeof(ComboBoxItem)) { VisualTree = border };
         var hover = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
-        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(65, 150, 185, 230))));
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(92, 105, 165, 225))));
+        hover.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White));
         template.Triggers.Add(hover);
+        var selected = new Trigger { Property = ComboBoxItem.IsSelectedProperty, Value = true };
+        selected.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(125, 80, 145, 220))));
+        selected.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White));
+        template.Triggers.Add(selected);
         return template;
     }
 
