@@ -217,7 +217,7 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         translateButton.Content = "翻译  ·  F5"; translateButton.Height = 46; translateButton.Margin = new Thickness(0,0,10,0);
-        translateButton.Background = new LinearGradientBrush(Color.FromArgb(220, 83, 142, 220), Color.FromArgb(220, 112, 105, 190), 0);
+        translateButton.Background = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
         translateButton.Foreground = Brushes.White;
         translateButton.BorderBrush = GlassBorder;
         translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 14; translateButton.FontWeight = FontWeights.SemiBold;
@@ -226,12 +226,12 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
 
         var hide = PillButton("隐藏窗口 · F4"); hideButton = hide; hide.Height = 46; hide.Margin = new Thickness(5,0,5,0);
-        hide.Background = new LinearGradientBrush(Color.FromArgb(170, 112, 128, 145), Color.FromArgb(170, 76, 91, 108), 0);
-        hide.BorderBrush = new SolidColorBrush(Color.FromArgb(145, 210, 225, 240));
+        hide.Background = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
+        hide.BorderBrush = GlassBorder;
         hide.Click += (_, _) => Hide(); Grid.SetColumn(hide,1); footer.Children.Add(hide);
         var pin = PillButton("置顶"); pinButton = pin; pin.Height = 46; pin.Margin = new Thickness(10,0,0,0);
-        pin.Background = new LinearGradientBrush(Color.FromArgb(180, 65, 151, 157), Color.FromArgb(180, 64, 112, 145), 0);
-        pin.BorderBrush = new SolidColorBrush(Color.FromArgb(155, 205, 235, 240));
+        pin.Background = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
+        pin.BorderBrush = GlassBorder;
         topmost.Content = pin.Content; topmost.IsChecked = true; topmost.Foreground = WhiteBrush;
         topmost.VerticalAlignment = VerticalAlignment.Center; topmost.HorizontalAlignment = HorizontalAlignment.Stretch;
         topmost.Checked += (_, _) => Topmost = true; topmost.Unchecked += (_, _) => Topmost = false;
