@@ -57,7 +57,7 @@ sealed class TranslatorWindow : Window
     public TranslatorWindow()
     {
         Title = "Tanslator";
-        Width = 700; Height = 590; MinWidth = 520; MinHeight = 430;
+        Width = 700; Height = 590; MinWidth = 440; MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
@@ -76,7 +76,7 @@ sealed class TranslatorWindow : Window
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
             BorderThickness = new Thickness(1.5), Padding = new Thickness(18)
         };
-        var layout = new Grid();
+        var layout = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
@@ -313,7 +313,7 @@ sealed class TranslatorWindow : Window
         long packed = lParam.ToInt64();
         int x = unchecked((short)(packed & 0xffff));
         int y = unchecked((short)((packed >> 16) & 0xffff));
-        const int edge = 9;
+        const int edge = 12;
         bool left = x >= r.Left && x < r.Left + edge;
         bool right = x < r.Right && x >= r.Right - edge;
         bool top = y >= r.Top && y < r.Top + edge;
