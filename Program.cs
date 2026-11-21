@@ -221,23 +221,40 @@ sealed class TranslatorWindow : Window
         return new Grid { Background = new SolidColorBrush(Color.FromArgb(58, 10, 17, 29)), IsHitTestVisible = false };
     }
 
+    static readonly (string Name, string Code)[] Languages =
+    {
+        ("自动检测", "autodetect"), ("英语 · English", "en"), ("简体中文", "zh-CN"), ("繁體中文", "zh-TW"),
+        ("日语 · 日本語", "ja"), ("韩语 · 한국어", "ko"), ("法语 · Français", "fr"), ("德语 · Deutsch", "de"),
+        ("西班牙语 · Español", "es"), ("意大利语 · Italiano", "it"), ("葡萄牙语 · Português", "pt"), ("俄语 · Русский", "ru"),
+        ("阿拉伯语 · العربية", "ar"), ("泰语 · ไทย", "th"), ("越南语 · Tiếng Việt", "vi"), ("荷兰语 · Nederlands", "nl"),
+        ("波兰语 · Polski", "pl"), ("土耳其语 · Türkçe", "tr"), ("印尼语 · Bahasa Indonesia", "id"), ("印地语 · हिन्दी", "hi"),
+        ("孟加拉语 · বাংলা", "bn"), ("乌尔都语 · اردو", "ur"), ("波斯语 · فارسی", "fa"), ("希伯来语 · עברית", "he"),
+        ("希腊语 · Ελληνικά", "el"), ("瑞典语 · Svenska", "sv"), ("挪威语 · Norsk", "no"), ("丹麦语 · Dansk", "da"),
+        ("芬兰语 · Suomi", "fi"), ("捷克语 · Čeština", "cs"), ("斯洛伐克语 · Slovenčina", "sk"), ("匈牙利语 · Magyar", "hu"),
+        ("罗马尼亚语 · Română", "ro"), ("保加利亚语 · Български", "bg"), ("乌克兰语 · Українська", "uk"), ("塞尔维亚语 · Српски", "sr"),
+        ("克罗地亚语 · Hrvatski", "hr"), ("斯洛文尼亚语 · Slovenščina", "sl"), ("立陶宛语 · Lietuvių", "lt"), ("拉脱维亚语 · Latviešu", "lv"),
+        ("爱沙尼亚语 · Eesti", "et"), ("马来语 · Bahasa Melayu", "ms"), ("菲律宾语 · Filipino", "tl"), ("斯瓦希里语 · Kiswahili", "sw"),
+        ("南非荷兰语 · Afrikaans", "af"), ("冰岛语 · Íslenska", "is"), ("爱尔兰语 · Gaeilge", "ga"), ("加泰罗尼亚语 · Català", "ca"),
+        ("巴斯克语 · Euskara", "eu"), ("加利西亚语 · Galego", "gl"), ("亚美尼亚语 · Հայերեն", "hy"), ("格鲁吉亚语 · ქართული", "ka"),
+        ("阿塞拜疆语 · Azərbaycan", "az"), ("哈萨克语 · Қазақша", "kk"), ("乌兹别克语 · Oʻzbek", "uz"), ("蒙古语 · Монгол", "mn"),
+        ("尼泊尔语 · नेपाली", "ne"), ("僧伽罗语 · සිංහල", "si"), ("高棉语 · ខ្មែរ", "km"), ("缅甸语 · မြန်မာ", "my"),
+        ("老挝语 · ລາວ", "lo"), ("马拉地语 · मराठी", "mr"), ("泰米尔语 · தமிழ்", "ta"), ("泰卢固语 · తెలుగు", "te"),
+        ("古吉拉特语 · ગુજરાતી", "gu"), ("旁遮普语 · ਪੰਜਾਬੀ", "pa"), ("约鲁巴语 · Yorùbá", "yo"), ("豪萨语 · Hausa", "ha"),
+        ("阿姆哈拉语 · አማርኛ", "am")
+    };
+
     static void SetupLanguage(ComboBox box, string selected)
     {
-        box.Items.Add("自动检测");
-        box.Items.Add("英文"); box.Items.Add("简体中文"); box.Items.Add("繁體中文");
-        box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
-        box.Items.Add("西班牙文"); box.Items.Add("意大利文"); box.Items.Add("葡萄牙文");
-        box.Items.Add("俄文"); box.Items.Add("阿拉伯文"); box.Items.Add("泰文");
-        box.Items.Add("越南文"); box.Items.Add("荷兰文"); box.Items.Add("波兰文");
-        box.Items.Add("土耳其文"); box.Items.Add("印尼文");
-        box.SelectedItem = selected;
-        box.Width = double.NaN; box.Height = 40; box.FontSize = 14; box.FontWeight = FontWeights.Medium;
-        box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(30, 10, 17, 29));
-        box.BorderBrush = new SolidColorBrush(Color.FromArgb(105,240,245,255));
-        box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
+        foreach (var language in Languages) box.Items.Add(language.Name);
+        box.SelectedItem = selected == "自动检测" ? Languages[0].Name : Languages[2].Name;
+        box.Width = double.NaN; box.Height = 42; box.FontSize = 13; box.FontWeight = FontWeights.SemiBold;
+        box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
+        box.BorderBrush = new SolidColorBrush(Color.FromArgb(115, 225, 238, 255));
+        box.BorderThickness = new Thickness(1.2); box.HorizontalContentAlignment = HorizontalAlignment.Center;
         box.VerticalContentAlignment = VerticalAlignment.Center;
-        box.Effect = null; box.SnapsToDevicePixels = true; box.Focusable = true; box.IsHitTestVisible = true;
-        box.Padding = new Thickness(10, 0, 10, 0);
+        box.Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.16, Color = Colors.Black };
+        box.SnapsToDevicePixels = true; box.Focusable = true; box.IsHitTestVisible = true;
+        box.Padding = new Thickness(10, 0, 28, 0);
         box.Template = LanguageComboTemplate();
         box.ItemContainerStyle = new Style(typeof(ComboBoxItem))
         {
@@ -245,9 +262,10 @@ sealed class TranslatorWindow : Window
             {
                 new Setter(Control.ForegroundProperty, Brushes.White),
                 new Setter(Control.BackgroundProperty, Brushes.Transparent),
-                new Setter(Control.PaddingProperty, new Thickness(12, 9, 12, 9)),
-                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center),
-                new Setter(Control.FontSizeProperty, 14.0),
+                new Setter(Control.PaddingProperty, new Thickness(14, 10, 14, 10)),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left),
+                new Setter(Control.FontSizeProperty, 13.0),
+                new Setter(Control.FontWeightProperty, FontWeights.Medium),
                 new Setter(Control.TemplateProperty, LanguageItemTemplate())
             }
         };
@@ -282,8 +300,20 @@ sealed class TranslatorWindow : Window
         selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
         selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 0, 22, 0));
         selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
         grid.AppendChild(selected);
+
+        var arrow = new FrameworkElementFactory(typeof(TextBlock));
+        arrow.SetValue(TextBlock.TextProperty, "⌄");
+        arrow.SetValue(TextBlock.FontSizeProperty, 17.0);
+        arrow.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
+        arrow.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromArgb(225, 245, 249, 255)));
+        arrow.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+        arrow.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        arrow.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 11, 3));
+        arrow.SetValue(UIElement.IsHitTestVisibleProperty, false);
+        grid.AppendChild(arrow);
 
         var popup = new FrameworkElementFactory(typeof(Popup));
         popup.Name = "PART_Popup";
@@ -510,29 +540,10 @@ sealed class TranslatorWindow : Window
 
     static string LanguageCode(string? name, bool source)
     {
-        return name switch
-        {
-            "自动检测" => "autodetect",
-            "英文" => "en",
-            "简体中文" => "zh-CN",
-            "繁體中文" => "zh-TW",
-            "日文" => "ja",
-            "韩文" => "ko",
-            "法文" => "fr",
-            "德文" => "de",
-            "西班牙文" => "es",
-            "意大利文" => "it",
-            "葡萄牙文" => "pt",
-            "俄文" => "ru",
-            "阿拉伯文" => "ar",
-            "泰文" => "th",
-            "越南文" => "vi",
-            "荷兰文" => "nl",
-            "波兰文" => "pl",
-            "土耳其文" => "tr",
-            "印尼文" => "id",
-            _ => source ? "autodetect" : "zh-CN"
-        };
+        foreach (var language in Languages)
+            if (language.Name == name)
+                return language.Code;
+        return source ? "autodetect" : "zh-CN";
     }
 
     static List<string> Split(string text, int limit)
