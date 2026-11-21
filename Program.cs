@@ -297,7 +297,10 @@ sealed class TranslatorWindow : Window
     static ControlTemplate LanguageItemTemplate()
     {
         var border = new FrameworkElementFactory(typeof(Border));
+        border.Name = "headerSurface";
         border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+        border.SetValue(Border.RenderTransformProperty, new ScaleTransform(1, 1));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         var content = new FrameworkElementFactory(typeof(ContentPresenter));
         content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -334,8 +337,7 @@ sealed class TranslatorWindow : Window
         pressed.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(220, 255, 255, 255))));
         pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
         pressed.Setters.Add(new Setter(UIElement.OpacityProperty, 0.78));
-        pressed.Setters.Add(new Setter(ScaleTransform.ScaleXProperty, 0.96) { TargetName = "surface" });
-        pressed.Setters.Add(new Setter(ScaleTransform.ScaleYProperty, 0.96) { TargetName = "surface" });
+        pressed.Setters.Add(new Setter(Border.RenderTransformProperty, new ScaleTransform(0.96, 0.96)) { TargetName = "surface" });
         template.Triggers.Add(pressed);
         var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.42));
@@ -377,6 +379,7 @@ sealed class TranslatorWindow : Window
         var pressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
         pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(105, 255, 255, 255))));
         pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
+        pressed.Setters.Add(new Setter(Border.RenderTransformProperty, new ScaleTransform(0.94, 0.94)) { TargetName = "headerSurface" });
         template.Triggers.Add(pressed);
         return template;
     }
