@@ -91,6 +91,12 @@ sealed class TranslatorWindow : Window
         // preserves normal button clicks; dragging starts only after the pointer moves.
         root.PreviewMouseLeftButtonDown += (_, e) =>
         {
+            // Interactive controls must retain mouse input for text selection and ComboBox use.
+            if (IsInteractiveElement(e.OriginalSource as DependencyObject))
+            {
+                dragPending = false;
+                return;
+            }
             dragStart = e.GetPosition(this);
             dragPending = true;
         };
@@ -212,6 +218,24 @@ sealed class TranslatorWindow : Window
             UnregisterHotKey(handle, HotkeyTranslate); UnregisterHotKey(handle, HotkeyToggle);
             hwndSource?.RemoveHook(WndProc);
         };
+    }
+
+    static bool IsInteractiveElement(DependencyObject? element)
+    {
+        while (element != null)
+        {
+            if (element is TextBoxBase || element is ComboBox || element is ComboBoxItem ||
+                element is ButtonBase || element is ScrollBar || element is Slider ||
+                element is ScrollViewer || element is PasswordBox)
+                return true;
+
+            DependencyObject? parent = null;
+            if (element is Visual || element is Visual3D)
+                parent = VisualTreeHelper.GetParent(element);
+            parent ??= LogicalTreeHelper.GetParent(element);
+            element = parent;
+        }
+        return false;
     }
 
     UIElement CreateBackdrop()
