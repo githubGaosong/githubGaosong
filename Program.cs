@@ -71,7 +71,7 @@ sealed class TranslatorWindow : Window
             new Rect(0, 0, root.ActualWidth, root.ActualHeight), 28, 28);
         root.Children.Add(CreateBackdrop());
         var frame = new Border {
-            Background = new SolidColorBrush(Color.FromArgb(18, 255, 255, 255)),
+            Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(28),
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
             BorderThickness = new Thickness(1.5), Padding = new Thickness(20)
