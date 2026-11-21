@@ -112,7 +112,7 @@ sealed class TranslatorWindow : Window
         };
         var layout = new Grid { ClipToBounds = false, SnapsToDevicePixels = true };
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(62) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
@@ -136,9 +136,9 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
-        var languageRow = new Grid { Margin = new Thickness(14, 4, 14, 8), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 50 };
+        var languageRow = new Grid { Margin = new Thickness(8, 3, 8, 8), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 48 };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(52) });
+        languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         SetupLanguage(sourceLang, "自动检测");
         SetupLanguage(targetLang, "简体中文");
@@ -148,7 +148,7 @@ sealed class TranslatorWindow : Window
         targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
         sourceLang.Margin = new Thickness(0, 2, 0, 2);
         targetLang.Margin = new Thickness(0, 2, 0, 2);
-        sourceLang.Height = 42; targetLang.Height = 42;
+        sourceLang.Height = 42; targetLang.Height = 42; sourceLang.MinWidth = 0; targetLang.MinWidth = 0;
         sourceLang.VerticalAlignment = VerticalAlignment.Center;
         targetLang.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
