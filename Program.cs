@@ -215,7 +215,7 @@ sealed class TranslatorWindow : Window
     UIElement CreateBackdrop()
     {
         // Colorless transparent window background: desktop remains visible through the glass UI.
-        return new Grid { Background = Brushes.Transparent, IsHitTestVisible = false };
+        return new Grid { Background = new SolidColorBrush(Color.FromArgb(30, 10, 17, 29)), IsHitTestVisible = false };
     }
 
     static void SetupLanguage(ComboBox box, string selected)
@@ -229,6 +229,79 @@ sealed class TranslatorWindow : Window
         box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
         box.VerticalContentAlignment = VerticalAlignment.Center;
         box.Effect = null; box.SnapsToDevicePixels = true;
+        box.Padding = new Thickness(10, 0, 10, 0);
+        box.Template = LanguageComboTemplate();
+        box.ItemContainerStyle = new Style(typeof(ComboBoxItem))
+        {
+            Setters =
+            {
+                new Setter(Control.ForegroundProperty, Brushes.White),
+                new Setter(Control.BackgroundProperty, Brushes.Transparent),
+                new Setter(Control.PaddingProperty, new Thickness(12, 9, 12, 9)),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center),
+                new Setter(Control.FontSizeProperty, 14.0),
+                new Setter(Control.TemplateProperty, LanguageItemTemplate())
+            }
+        };
+    }
+
+    static ControlTemplate LanguageComboTemplate()
+    {
+        var grid = new FrameworkElementFactory(typeof(Grid));
+        var toggle = new FrameworkElementFactory(typeof(ToggleButton));
+        toggle.SetValue(ToggleButton.FocusableProperty, false);
+        toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
+        { RelativeSource = RelativeSource.TemplatedParent, Mode = System.Windows.Data.BindingMode.TwoWay });
+        var chrome = new FrameworkElementFactory(typeof(Border));
+        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(18));
+        chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        chrome.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        chrome.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        toggle.AppendChild(chrome);
+        grid.AppendChild(toggle);
+
+        var selected = new FrameworkElementFactory(typeof(ContentPresenter));
+        selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
+        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        selected.SetValue(ContentPresenter.IsHitTestVisibleProperty, false);
+        grid.AppendChild(selected);
+
+        var popup = new FrameworkElementFactory(typeof(Popup));
+        popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
+        popup.SetValue(Popup.AllowsTransparencyProperty, true);
+        popup.SetValue(Popup.FocusableProperty, false);
+        popup.SetValue(Popup.PopupAnimationProperty, PopupAnimation.Fade);
+        popup.SetBinding(Popup.IsOpenProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
+        { RelativeSource = RelativeSource.TemplatedParent });
+        var popupBorder = new FrameworkElementFactory(typeof(Border));
+        popupBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(248, 24, 31, 44)));
+        popupBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(210, 205, 220, 242)));
+        popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(14));
+        popupBorder.SetValue(Border.PaddingProperty, new Thickness(4));
+        popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 6, 0, 0));
+        var items = new FrameworkElementFactory(typeof(ItemsPresenter));
+        popupBorder.AppendChild(items);
+        popup.AppendChild(popupBorder);
+        grid.AppendChild(popup);
+        return new ControlTemplate(typeof(ComboBox)) { VisualTree = grid };
+    }
+
+    static ControlTemplate LanguageItemTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(content);
+        var template = new ControlTemplate(typeof(ComboBoxItem)) { VisualTree = border };
+        var hover = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(65, 150, 185, 230))));
+        template.Triggers.Add(hover);
+        return template;
     }
 
     static ControlTemplate PillTemplate()
@@ -344,8 +417,8 @@ sealed class TranslatorWindow : Window
         int x = unchecked((short)(packed & 0xffff));
         int y = unchecked((short)((packed >> 16) & 0xffff));
         // Larger corner zones make diagonal resizing easier to grab.
-        const int edge = 18;
-        const int corner = 30;
+        const int edge = 30;
+        const int corner = 48;
         bool left = x >= r.Left && x < r.Left + edge;
         bool right = x < r.Right && x >= r.Right - edge;
         bool top = y >= r.Top && y < r.Top + edge;
