@@ -53,9 +53,9 @@ sealed class TranslatorWindow : Window
     static readonly Color Muted = Color.FromRgb(190, 205, 221);
     static readonly Brush WhiteBrush = new SolidColorBrush(Color.FromRgb(250, 250, 255));
     static readonly Brush MutedBrush = new SolidColorBrush(Color.FromArgb(220, 238, 239, 255));
-    static readonly Brush GlassPanel = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
+    static readonly Brush GlassPanel = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255));
     static readonly Brush GlassBorder = new SolidColorBrush(Color.FromArgb(90, 238, 245, 255));
-    static readonly Brush Accent = new SolidColorBrush(Color.FromArgb(34, 255, 255, 255));
+    static readonly Brush Accent = new SolidColorBrush(Color.FromArgb(46, 255, 255, 255));
 
     public TranslatorWindow()
     {
@@ -88,35 +88,11 @@ sealed class TranslatorWindow : Window
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
         frame.Child = layout; root.Children.Add(frame); Content = root;
-        // Any part of the window can start a drag. A small movement threshold
-        // preserves normal button clicks; dragging starts only after the pointer moves.
-        root.PreviewMouseLeftButtonDown += (_, e) =>
-        {
-            // Interactive controls must retain mouse input for text selection and ComboBox use.
-            if (IsInteractiveElement(e.OriginalSource as DependencyObject))
-            {
-                dragPending = false;
-                return;
-            }
-            dragStart = e.GetPosition(this);
-            dragPending = true;
-        };
-        root.PreviewMouseMove += (_, e) =>
-        {
-            if (!dragPending || e.LeftButton != MouseButtonState.Pressed) return;
-            Point now = e.GetPosition(this);
-            if (Math.Abs(now.X - dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
-                Math.Abs(now.Y - dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
-            dragPending = false;
-            try { DragMove(); } catch (InvalidOperationException) { }
-        };
-        root.PreviewMouseLeftButtonUp += (_, _) => dragPending = false;
-
         var header = new Grid();
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var title = new TextBlock { Text = "Translate", FontSize = 22, FontWeight = FontWeights.SemiBold,
+        var title = new TextBlock { Text = "Translate", FontSize = 18, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.SizeAll };
         title.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } };
         header.Children.Add(title);
@@ -170,7 +146,7 @@ sealed class TranslatorWindow : Window
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(52) });
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         var outputHeader = new Grid { Margin = new Thickness(24,0,24,0) };
-        var outputLabel = new TextBlock { Text = "译文", FontSize = 19, FontWeight = FontWeights.SemiBold,
+        var outputLabel = new TextBlock { Text = "译文", FontSize = 18, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center };
         outputHeader.Children.Add(outputLabel);
         outputGrid.Children.Add(outputHeader);
@@ -242,20 +218,25 @@ sealed class TranslatorWindow : Window
     UIElement CreateBackdrop()
     {
         // Colorless transparent window background: desktop remains visible through the glass UI.
-        return new Grid { Background = new SolidColorBrush(Color.FromArgb(30, 10, 17, 29)), IsHitTestVisible = false };
+        return new Grid { Background = new SolidColorBrush(Color.FromArgb(58, 10, 17, 29)), IsHitTestVisible = false };
     }
 
     static void SetupLanguage(ComboBox box, string selected)
     {
-        box.Items.Add("自动检测"); box.Items.Add("英文"); box.Items.Add("简体中文");
-        box.Items.Add("繁體中文"); box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
+        box.Items.Add("自动检测");
+        box.Items.Add("英文"); box.Items.Add("简体中文"); box.Items.Add("繁體中文");
+        box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
+        box.Items.Add("西班牙文"); box.Items.Add("意大利文"); box.Items.Add("葡萄牙文");
+        box.Items.Add("俄文"); box.Items.Add("阿拉伯文"); box.Items.Add("泰文");
+        box.Items.Add("越南文"); box.Items.Add("荷兰文"); box.Items.Add("波兰文");
+        box.Items.Add("土耳其文"); box.Items.Add("印尼文");
         box.SelectedItem = selected;
         box.Width = double.NaN; box.Height = 40; box.FontSize = 14; box.FontWeight = FontWeights.Medium;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(30, 10, 17, 29));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(105,240,245,255));
         box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
         box.VerticalContentAlignment = VerticalAlignment.Center;
-        box.Effect = null; box.SnapsToDevicePixels = true;
+        box.Effect = null; box.SnapsToDevicePixels = true; box.Focusable = true; box.IsHitTestVisible = true;
         box.Padding = new Thickness(10, 0, 10, 0);
         box.Template = LanguageComboTemplate();
         box.ItemContainerStyle = new Style(typeof(ComboBoxItem))
@@ -276,7 +257,8 @@ sealed class TranslatorWindow : Window
     {
         var grid = new FrameworkElementFactory(typeof(Grid));
         var toggle = new FrameworkElementFactory(typeof(ToggleButton));
-        toggle.SetValue(ToggleButton.FocusableProperty, false);
+        toggle.SetValue(ToggleButton.FocusableProperty, true);
+        toggle.SetValue(UIElement.IsHitTestVisibleProperty, true);
         toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
         toggle.SetValue(Control.TemplateProperty, new ControlTemplate(typeof(ToggleButton))
@@ -314,8 +296,13 @@ sealed class TranslatorWindow : Window
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(14));
         popupBorder.SetValue(Border.PaddingProperty, new Thickness(4));
         popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 6, 0, 0));
+        var popupScroll = new FrameworkElementFactory(typeof(ScrollViewer));
+        popupScroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
+        popupScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
+        popupScroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
         var items = new FrameworkElementFactory(typeof(ItemsPresenter));
-        popupBorder.AppendChild(items);
+        popupScroll.AppendChild(items);
+        popupBorder.AppendChild(popupScroll);
         popup.AppendChild(popupBorder);
         grid.AppendChild(popup);
         return new ControlTemplate(typeof(ComboBox)) { VisualTree = grid };
@@ -523,6 +510,17 @@ sealed class TranslatorWindow : Window
             "韩文" => "ko",
             "法文" => "fr",
             "德文" => "de",
+            "西班牙文" => "es",
+            "意大利文" => "it",
+            "葡萄牙文" => "pt",
+            "俄文" => "ru",
+            "阿拉伯文" => "ar",
+            "泰文" => "th",
+            "越南文" => "vi",
+            "荷兰文" => "nl",
+            "波兰文" => "pl",
+            "土耳其文" => "tr",
+            "印尼文" => "id",
             _ => source ? "autodetect" : "zh-CN"
         };
     }
