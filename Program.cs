@@ -22,6 +22,9 @@ sealed class TranslatorWindow : Form
     const int TranslateHotkey = 1, ToggleHotkey = 2;
     const uint NoRepeat = 0x4000, F4 = 0x73, F5 = 0x74;
     const int WmNclButtonDown = 0xA1, HtCaption = 0x2;
+    const int WmNcHitTest = 0x84;
+    const int HtLeft = 10, HtRight = 11, HtTop = 12, HtTopLeft = 13, HtTopRight = 14;
+    const int HtBottom = 15, HtBottomLeft = 16, HtBottomRight = 17;
     const int DwmwaUseImmersiveDarkMode = 20;
     const int DwmwaWindowCornerPreference = 33;
     const int DwmwaSystemBackdropType = 38;
@@ -74,8 +77,10 @@ sealed class TranslatorWindow : Form
         header.MouseDown += DragWindow;
 
         var mark = new Label {
-            Text = "T", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.White, BackColor = Color.FromArgb(35, 166, 238), Font = new Font("Segoe UI", 22, FontStyle.Bold),
+            Text = "文A", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Color.FromArgb(241, 250, 249), BackColor = Color.FromArgb(74, 119, 130),
+            Font = new Font("Microsoft YaHei UI", 13, FontStyle.Bold),
+            BorderStyle = BorderStyle.FixedSingle
         };
         mark.SetBounds(18, 10, 42, 42);
         mark.MouseDown += DragWindow;
@@ -247,6 +252,23 @@ sealed class TranslatorWindow : Form
 
     protected override void WndProc(ref Message message)
     {
+        if (message.Msg == WmNcHitTest && WindowState == FormWindowState.Normal)
+        {
+            base.WndProc(ref message);
+            Point p = PointToClient(Cursor.Position);
+            const int grip = 9;
+            bool left = p.X <= grip, right = p.X >= ClientSize.Width - grip;
+            bool top = p.Y <= grip, bottom = p.Y >= ClientSize.Height - grip;
+            if (top && left) message.Result = (IntPtr)HtTopLeft;
+            else if (top && right) message.Result = (IntPtr)HtTopRight;
+            else if (bottom && left) message.Result = (IntPtr)HtBottomLeft;
+            else if (bottom && right) message.Result = (IntPtr)HtBottomRight;
+            else if (left) message.Result = (IntPtr)HtLeft;
+            else if (right) message.Result = (IntPtr)HtRight;
+            else if (top) message.Result = (IntPtr)HtTop;
+            else if (bottom) message.Result = (IntPtr)HtBottom;
+            return;
+        }
         if (message.Msg == HotkeyMessage)
         {
             if (message.WParam.ToInt32() == TranslateHotkey) _ = TranslateAsync();
