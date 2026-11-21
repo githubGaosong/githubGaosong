@@ -1,0 +1,23 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish single-file EXE
+        run: dotnet publish GameTranslator.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameTranslator-Windows-x64
+          path: bin/Release/net8.0-windows/win-x64/publish/GameTranslator.exe
+          if-no-files-found: error
