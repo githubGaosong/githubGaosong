@@ -157,7 +157,7 @@ sealed class TranslatorWindow : Window
         status.FontSize = 11; status.VerticalAlignment = VerticalAlignment.Bottom;
         status.Margin = new Thickness(4, 0, 0, 0);
         Grid.SetRow(footer, 5); layout.Children.Add(footer);
-        Grid.SetColumn(status, 1); footer.Children.Add(status);
+        Grid.SetColumn(status, 2); footer.Children.Add(status);
 
         SourceInitialized += (_, _) => {
             var handle = new WindowInteropHelper(this).Handle;
