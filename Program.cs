@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -107,15 +108,27 @@ sealed class MainWindow : Form
         try
         {
             string url = "https://api.mymemory.translated.net/get?q=" +
-                         Uri.EscapeDataString(text) + "&langpair=auto|zh-CN";
+                         Uri.EscapeDataString(text) + "&langpair=en|zh-CN";
             using var response = await Http.GetAsync(url, requestCts.Token);
             response.EnsureSuccessStatusCode();
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(requestCts.Token));
-            string translated = json.RootElement
-                .GetProperty("responseData").GetProperty("translatedText").GetString() ?? "";
+            var root = json.RootElement;
+            if (root.TryGetProperty("responseStatus", out var apiStatus) &&
+                apiStatus.ValueKind == JsonValueKind.Number &&
+                apiStatus.GetInt32() != 200)
+            {
+                string detail = root.TryGetProperty("responseDetails", out var details)
+                    ? details.GetString() ?? "未知错误" : "未知错误";
+                throw new InvalidOperationException("翻译接口返回错误：" + detail);
+            }
 
+            if (!root.TryGetProperty("responseData", out var responseData) ||
+                !responseData.TryGetProperty("translatedText", out var translatedElement))
+                throw new InvalidOperationException("翻译接口没有返回译文，请稍后重试。");
+
+            string translated = WebUtility.HtmlDecode(translatedElement.GetString() ?? "").Trim();
             if (string.IsNullOrWhiteSpace(translated))
-                throw new InvalidOperationException("翻译服务没有返回结果。");
+                throw new InvalidOperationException("接口返回的译文为空。请检查原文是否过长，或稍后重试。");
 
             overlay.SetText(translated);
             overlay.ShowOverlay();
