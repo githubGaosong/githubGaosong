@@ -48,96 +48,96 @@ sealed class TranslatorWindow : Form
     readonly Panel header = new();
     CancellationTokenSource? request;
 
-    static readonly Color Ink = Color.FromArgb(245, 248, 252);
-    static readonly Color Muted = Color.FromArgb(184, 201, 218);
-    static readonly Color Field = Color.FromArgb(42, 57, 73);
-    static readonly Color FieldGreen = Color.FromArgb(38, 65, 66);
-    static readonly Color Accent = Color.FromArgb(83, 163, 148);
+    static readonly Color Ink = Color.FromArgb(250, 252, 255);
+    static readonly Color Muted = Color.FromArgb(220, 231, 243);
+    static readonly Color Field = Color.FromArgb(63, 80, 99);
+    static readonly Color FieldGreen = Color.FromArgb(59, 91, 119);
+    static readonly Color Accent = Color.FromArgb(55, 145, 235);
 
     public TranslatorWindow()
     {
         Text = "Tanslator";
         FormBorderStyle = FormBorderStyle.None;
-        ClientSize = new Size(580, 550);
-        MinimumSize = new Size(500, 500);
+        ClientSize = new Size(760, 640);
+        MinimumSize = new Size(680, 580);
         StartPosition = FormStartPosition.CenterScreen;
         TopMost = true;
-        Opacity = 0.94;
-        BackColor = Color.FromArgb(22, 31, 43);
+        Opacity = 0.96;
+        BackColor = Color.FromArgb(35, 54, 76);
         ForeColor = Ink;
         Font = new Font("Microsoft YaHei UI", 9.5f);
-        Padding = new Padding(18);
+        Padding = new Padding(24);
 
-        header.SetBounds(0, 0, 544, 54);
+        header.SetBounds(0, 0, 712, 64);
         header.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        header.BackColor = Color.FromArgb(31, 44, 59);
+        header.BackColor = Color.FromArgb(74, 96, 119);
         header.MouseDown += DragWindow;
 
         var mark = new Label {
-            Text = "◈", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(157, 221, 207), Font = new Font("Segoe UI Symbol", 19),
+            Text = "T", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Color.White, BackColor = Color.FromArgb(35, 166, 238), Font = new Font("Segoe UI", 22, FontStyle.Bold),
         };
-        mark.SetBounds(0, 5, 38, 42);
+        mark.SetBounds(18, 10, 42, 42);
         mark.MouseDown += DragWindow;
 
         var heading = new Label {
             Text = "Tanslator", AutoSize = false, TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = Ink, Font = new Font("Microsoft YaHei UI", 16, FontStyle.Bold)
         };
-        heading.SetBounds(40, 5, 170, 42);
+        heading.SetBounds(70, 8, 210, 46);
         heading.MouseDown += DragWindow;
 
         target.Items.AddRange(new object[] { "翻译成中文", "翻译成英文" });
         target.SelectedIndex = 0;
         target.DropDownStyle = ComboBoxStyle.DropDownList;
-        target.SetBounds(300, 12, 150, 30);
+        target.SetBounds(430, 16, 210, 34);
         target.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         target.BackColor = Color.FromArgb(53, 68, 84);
         target.ForeColor = Color.White;
         target.FlatStyle = FlatStyle.Flat;
 
         var minimize = HeaderButton("—");
-        minimize.SetBounds(462, 10, 30, 30);
+        minimize.SetBounds(650, 14, 28, 32);
         minimize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         minimize.Click += (_, _) => WindowState = FormWindowState.Minimized;
 
         var close = HeaderButton("×");
-        close.SetBounds(500, 10, 30, 30);
+        close.SetBounds(684, 14, 28, 32);
         close.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         close.Click += (_, _) => Close();
 
         header.Controls.AddRange(new Control[] { mark, heading, target, minimize, close });
 
         var originalLabel = SectionLabel("原文");
-        originalLabel.SetBounds(0, 70, 500, 22);
-        original.SetBounds(0, 98, 544, 132);
+        originalLabel.SetBounds(28, 92, 500, 26);
+        original.SetBounds(24, 126, 712, 170);
         original.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         original.Multiline = true;
         original.AcceptsReturn = true;
         original.ScrollBars = ScrollBars.Vertical;
-        original.Font = new Font("Microsoft YaHei UI", 10.5f);
+        original.Font = new Font("Microsoft YaHei UI", 12f);
         original.PlaceholderText = "在这里粘贴需要翻译的文字…";
-        StyleTextBox(original, Field);
+        StyleTextBox(original, Color.FromArgb(53, 68, 86));
 
         var divider = new Panel {
             BackColor = Color.FromArgb(70, 128, 145, 163)
         };
-        divider.SetBounds(0, 246, 544, 1);
+        divider.SetBounds(24, 316, 712, 1);
         divider.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
         var resultLabel = SectionLabel("译文");
         resultLabel.ForeColor = Color.FromArgb(151, 224, 207);
-        resultLabel.SetBounds(0, 262, 500, 22);
-        result.SetBounds(0, 290, 544, 145);
+        resultLabel.SetBounds(28, 338, 500, 26);
+        result.SetBounds(24, 372, 712, 170);
         result.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         result.Multiline = true;
         result.ReadOnly = true;
         result.ScrollBars = ScrollBars.Vertical;
-        result.Font = new Font("Microsoft YaHei UI", 11.5f);
-        StyleTextBox(result, FieldGreen);
+        result.Font = new Font("Microsoft YaHei UI", 12.5f);
+        StyleTextBox(result, Color.FromArgb(55, 83, 112));
 
         translate.Text = "翻译  ·  F5";
-        translate.SetBounds(0, 464, 132, 38);
+        translate.SetBounds(28, 566, 138, 42);
         translate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         translate.FlatStyle = FlatStyle.Flat;
         translate.FlatAppearance.BorderSize = 0;
@@ -151,7 +151,7 @@ sealed class TranslatorWindow : Form
         alwaysOnTop.Text = "窗口置顶";
         alwaysOnTop.Checked = true;
         alwaysOnTop.AutoSize = true;
-        alwaysOnTop.SetBounds(154, 472, 95, 25);
+        alwaysOnTop.SetBounds(580, 574, 120, 28);
         alwaysOnTop.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         alwaysOnTop.ForeColor = Muted;
         alwaysOnTop.BackColor = Color.Transparent;
@@ -159,7 +159,7 @@ sealed class TranslatorWindow : Form
 
         status.Text = "F4 显示 / 隐藏窗口";
         status.AutoSize = true;
-        status.SetBounds(0, 514, 520, 22);
+        status.SetBounds(190, 576, 360, 24);
         status.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         status.ForeColor = Muted;
 
