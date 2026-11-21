@@ -313,10 +313,13 @@ sealed class TranslatorWindow : Window
     static ControlTemplate PillTemplate()
     {
         var border = new FrameworkElementFactory(typeof(Border));
+        border.Name = "surface";
         border.SetValue(Border.CornerRadiusProperty, new CornerRadius(40));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+        border.SetValue(UIElement.RenderTransformProperty, new ScaleTransform(1, 1));
         var cp = new FrameworkElementFactory(typeof(ContentPresenter));
         cp.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
@@ -331,6 +334,8 @@ sealed class TranslatorWindow : Window
         pressed.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(220, 255, 255, 255))));
         pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
         pressed.Setters.Add(new Setter(UIElement.OpacityProperty, 0.78));
+        pressed.Setters.Add(new Setter(ScaleTransform.ScaleXProperty, 0.96) { TargetName = "surface" });
+        pressed.Setters.Add(new Setter(ScaleTransform.ScaleYProperty, 0.96) { TargetName = "surface" });
         template.Triggers.Add(pressed);
         var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.42));
