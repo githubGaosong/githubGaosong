@@ -67,7 +67,7 @@ sealed class TranslatorWindow : Window
     public TranslatorWindow()
     {
         Title = "Translate";
-        Width = 540; Height = 460; MinWidth = 180; MinHeight = 120;
+        Width = 540; Height = 460; MinWidth = 420; MinHeight = 340;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
@@ -90,7 +90,7 @@ sealed class TranslatorWindow : Window
         };
         var layout = new Grid { ClipToBounds = false, SnapsToDevicePixels = true };
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(58) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(72) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
@@ -114,7 +114,7 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
-        var languageRow = new Grid { Margin = new Thickness(6, 4, 6, 16), VerticalAlignment = VerticalAlignment.Stretch, ClipToBounds = false };
+        var languageRow = new Grid { Margin = new Thickness(6, 4, 6, 8), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 54 };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -124,8 +124,10 @@ sealed class TranslatorWindow : Window
         sourceLang.Width = double.NaN; targetLang.Width = double.NaN;
         sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
         targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
-        sourceLang.Margin = new Thickness(4, 3, 4, 3);
-        targetLang.Margin = new Thickness(4, 3, 4, 3);
+        sourceLang.Margin = new Thickness(4, 2, 4, 2);
+        targetLang.Margin = new Thickness(4, 2, 4, 2);
+        sourceLang.VerticalAlignment = VerticalAlignment.Center;
+        targetLang.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
         var swap = new TextBlock { Text = "→", FontSize = 23, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
@@ -436,14 +438,14 @@ sealed class TranslatorWindow : Window
     {
         foreach (var language in Languages) box.Items.Add(language.Name);
         box.SelectedItem = selected == "自动检测" ? Languages[0].Name : Languages[2].Name;
-        box.Width = double.NaN; box.Height = 42; box.FontSize = 13; box.FontWeight = FontWeights.SemiBold;
+        box.Width = double.NaN; box.Height = 44; box.FontSize = 13; box.FontWeight = FontWeights.SemiBold;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(115, 225, 238, 255));
         box.BorderThickness = new Thickness(1.2); box.HorizontalContentAlignment = HorizontalAlignment.Center;
         box.VerticalContentAlignment = VerticalAlignment.Center;
         box.Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.16, Color = Colors.Black };
         box.SnapsToDevicePixels = true; box.Focusable = true; box.IsHitTestVisible = true;
-        box.Padding = new Thickness(10, 0, 28, 0);
+        box.Padding = new Thickness(10, 0, 10, 0);
         box.Template = LanguageComboTemplate();
         box.ItemContainerStyle = new Style(typeof(ComboBoxItem))
         {
