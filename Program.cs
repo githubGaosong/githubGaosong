@@ -321,7 +321,7 @@ sealed class TranslatorWindow : Form
         while (start < text.Length) {
             int end = Math.Min(start + maxLength, text.Length);
             if (end < text.Length) {
-                int split = text.LastIndexOfAny(new[] { ' ', '\\t', '\\r', '\\n' }, end - 1, end - start);
+                int split = text.LastIndexOfAny(new[] { ' ', '\t', '\r', '\n' }, end - 1, end - start);
                 if (split > start + maxLength / 2) end = split + 1;
                 if (end > start && end < text.Length &&
                     char.IsHighSurrogate(text[end - 1]) && char.IsLowSurrogate(text[end]))
