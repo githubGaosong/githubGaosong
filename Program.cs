@@ -175,7 +175,6 @@ sealed class TranslatorWindow : Form
         };
         FormClosing += (_, _) => {
             request?.Cancel();
-            request?.Dispose();
             UnregisterHotKey(Handle, TranslateHotkey);
             UnregisterHotKey(Handle, ToggleHotkey);
         };
@@ -272,40 +271,88 @@ sealed class TranslatorWindow : Form
             status.Text = "请先粘贴需要翻译的文字。";
             return;
         }
+        if (input.Length > 5000) {
+            status.Text = "文本超过 5000 字符；公共翻译服务有每日额度限制。";
+            return;
+        }
 
         request?.Cancel();
-        request?.Dispose();
-        request = new CancellationTokenSource();
-        var token = request.Token;
+        var currentRequest = new CancellationTokenSource();
+        request = currentRequest;
+        var token = currentRequest.Token;
         translate.Enabled = false;
         status.Text = "正在翻译…";
         var pair = target.SelectedIndex == 1 ? "zh-CN|en" : "en|zh-CN";
 
         try {
-            var url = "https://api.mymemory.translated.net/get?q=" +
-                      Uri.EscapeDataString(input) + "&langpair=" + pair;
-            using var response = await Client.GetAsync(url, token);
-            response.EnsureSuccessStatusCode();
-            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
-            var root = json.RootElement;
-            if (root.TryGetProperty("responseStatus", out var apiStatus) &&
-                apiStatus.ValueKind == JsonValueKind.Number && apiStatus.GetInt32() != 200)
-                throw new InvalidOperationException(
-                    root.TryGetProperty("responseDetails", out var detail)
-                        ? detail.GetString() ?? "翻译服务返回错误" : "翻译服务返回错误");
+            var chunks = SplitIntoChunks(input, 450);
+            var translatedParts = new List<string>(chunks.Count);
+            for (int i = 0; i < chunks.Count; i++) {
+                token.ThrowIfCancellationRequested();
+                status.Text = chunks.Count > 1
+                    ? $"正在翻译…（{i + 1}/{chunks.Count}）"
+                    : "正在翻译…";
+                translatedParts.Add(await TranslateChunkAsync(chunks[i], pair, token));
+            }
 
-            var translated = WebUtility.HtmlDecode(
-                root.GetProperty("responseData").GetProperty("translatedText").GetString() ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(translated))
-                throw new InvalidOperationException("翻译服务没有返回有效译文。");
-            result.Text = translated;
+            token.ThrowIfCancellationRequested();
+            if (IsDisposed || Disposing) return;
+            result.Text = string.Join(" ", translatedParts);
             status.Text = "翻译完成。";
         }
         catch (OperationCanceledException) { }
-        catch (Exception error) { status.Text = "翻译失败：" + error.Message; }
-        finally {
-            if (!IsDisposed) translate.Enabled = true;
+        catch (Exception error) {
+            if (!IsDisposed && !Disposing && !token.IsCancellationRequested)
+                status.Text = "翻译失败：" + error.Message;
         }
+        finally {
+            currentRequest.Dispose();
+            if (ReferenceEquals(request, currentRequest)) {
+                request = null;
+                if (!IsDisposed && !Disposing) translate.Enabled = true;
+            }
+        }
+    }
+
+    static List<string> SplitIntoChunks(string text, int maxLength)
+    {
+        var chunks = new List<string>();
+        int start = 0;
+        while (start < text.Length) {
+            int end = Math.Min(start + maxLength, text.Length);
+            if (end < text.Length) {
+                int split = text.LastIndexOfAny(new[] { ' ', '\\t', '\\r', '\\n' }, end - 1, end - start);
+                if (split > start + maxLength / 2) end = split + 1;
+                if (end > start && end < text.Length &&
+                    char.IsHighSurrogate(text[end - 1]) && char.IsLowSurrogate(text[end]))
+                    end--;
+            }
+            chunks.Add(text.Substring(start, end - start).Trim());
+            start = end;
+            while (start < text.Length && char.IsWhiteSpace(text[start])) start++;
+        }
+        return chunks.Where(chunk => chunk.Length > 0).ToList();
+    }
+
+    static async Task<string> TranslateChunkAsync(string input, string pair, CancellationToken token)
+    {
+        var url = "https://api.mymemory.translated.net/get?q=" +
+                  Uri.EscapeDataString(input) + "&langpair=" + pair;
+        using var response = await Client.GetAsync(url, token);
+        response.EnsureSuccessStatusCode();
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
+        var root = json.RootElement;
+        if (root.TryGetProperty("responseStatus", out var apiStatus) &&
+            apiStatus.ValueKind == JsonValueKind.Number && apiStatus.GetInt32() != 200)
+            throw new InvalidOperationException(
+                root.TryGetProperty("responseDetails", out var detail)
+                    ? detail.GetString() ?? "翻译服务返回错误" : "翻译服务返回错误");
+
+        var translated = WebUtility.HtmlDecode(
+            root.GetProperty("responseData").GetProperty("translatedText").GetString() ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(translated))
+            throw new InvalidOperationException("翻译服务没有返回有效译文。");
+        return translated;
     }
 }
 
