@@ -12,6 +12,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Interop;
 using System.Windows.Shell;
+using Microsoft.Win32;
 
 internal static class Program
 {
@@ -42,6 +43,10 @@ sealed class TranslatorWindow : Window
     readonly ComboBox targetLang = new();
     readonly ComboBox backgroundChoice = new();
     Grid? backdropLayer;
+    ImageBrush? uploadedBackground;
+    TextBlock? titleText, inputHint, outputLabel;
+    Button? hideButton, pinButton;
+    string currentBackground = "彩虹渐变";
     readonly TextBlock charCount = new();
     readonly TextBlock status = new();
     readonly Button translateButton = new();
@@ -98,6 +103,7 @@ sealed class TranslatorWindow : Window
         var title = new TextBlock { Text = "Translate", FontSize = 18, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.SizeAll };
         title.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } };
+        titleText = title;
         header.Children.Add(title);
         SetupBackgroundSelector();
         backgroundChoice.Margin = new Thickness(0, 0, 8, 0);
@@ -123,6 +129,7 @@ sealed class TranslatorWindow : Window
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(14, 0, 14, 0) };
         Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
+        targetLang.SelectionChanged += (_, _) => UpdateUiLanguage();
         Grid.SetColumn(targetLang, 2); languageRow.Children.Add(targetLang);
         Grid.SetRow(languageRow, 1); layout.Children.Add(languageRow);
 
@@ -136,7 +143,7 @@ sealed class TranslatorWindow : Window
         StyleEditor(source, false);
         source.FontSize = 16; source.FontWeight = FontWeights.Medium; source.Padding = new Thickness(0); source.Background = Brushes.Transparent;
         source.BorderThickness = new Thickness(0);
-        var inputHint = new TextBlock { Text = "请输入要翻译的内容...", FontSize = 16, Foreground = new SolidColorBrush(Color.FromArgb(190,255,255,255)),
+        inputHint = new TextBlock { Text = "请输入要翻译的内容...", FontSize = 16, Foreground = new SolidColorBrush(Color.FromArgb(190,255,255,255)),
             IsHitTestVisible = false, Margin = new Thickness(2,2,48,0), VerticalAlignment = VerticalAlignment.Top };
         source.TextChanged += (_, _) => { inputHint.Visibility = string.IsNullOrEmpty(source.Text) ? Visibility.Visible : Visibility.Collapsed; charCount.Text = $"{source.Text.Length} / 5000"; };
         inputArea.Children.Add(source); inputArea.Children.Add(inputHint);
@@ -156,6 +163,7 @@ sealed class TranslatorWindow : Window
         var outputHeader = new Grid { Margin = new Thickness(24,0,24,0) };
         var outputLabel = new TextBlock { Text = "译文", FontSize = 15, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center };
+        this.outputLabel = outputLabel;
         outputHeader.Children.Add(outputLabel);
         outputGrid.Children.Add(outputHeader);
         var outputDivider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(55,255,255,255)),
@@ -182,9 +190,9 @@ sealed class TranslatorWindow : Window
         translateButton.Template = PillTemplate();
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
 
-        var hide = PillButton("隐藏窗口 · F4"); hide.Margin = new Thickness(5,0,5,0);
+        var hide = PillButton("隐藏窗口 · F4"); hideButton = hide; hide.Margin = new Thickness(5,0,5,0);
         hide.Click += (_, _) => Hide(); Grid.SetColumn(hide,1); footer.Children.Add(hide);
-        var pin = PillButton("置顶"); pin.Margin = new Thickness(12,0,0,0);
+        var pin = PillButton("置顶"); pinButton = pin; pin.Margin = new Thickness(12,0,0,0);
         topmost.Content = pin.Content; topmost.IsChecked = true; topmost.Foreground = WhiteBrush;
         topmost.VerticalAlignment = VerticalAlignment.Center; topmost.HorizontalAlignment = HorizontalAlignment.Stretch;
         topmost.Checked += (_, _) => Topmost = true; topmost.Unchecked += (_, _) => Topmost = false;
@@ -239,6 +247,13 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Items.Add("薄荷绿");
         backgroundChoice.Items.Add("暖阳橙");
         backgroundChoice.Items.Add("石墨黑");
+        backgroundChoice.Items.Add("海盐青");
+        backgroundChoice.Items.Add("暮色玫瑰");
+        backgroundChoice.Items.Add("冰川蓝");
+        backgroundChoice.Items.Add("薰衣草");
+        backgroundChoice.Items.Add("森林绿");
+        backgroundChoice.Items.Add("奶油黄");
+        backgroundChoice.Items.Add("上传图片…");
         backgroundChoice.SelectedIndex = 0;
         backgroundChoice.Width = 112;
         backgroundChoice.Height = 30;
@@ -253,6 +268,8 @@ sealed class TranslatorWindow : Window
         backgroundChoice.SelectionChanged += (_, _) =>
         {
             string choice = backgroundChoice.SelectedIndex == 0 ? "彩虹渐变" : backgroundChoice.SelectedItem?.ToString() ?? "彩虹渐变";
+            if (choice == "上传图片…") { ChooseBackgroundImage(); return; }
+            currentBackground = choice;
             ApplyBackground(choice);
         };
     }
@@ -268,6 +285,12 @@ sealed class TranslatorWindow : Window
             "薄荷绿" => new LinearGradientBrush(Color.FromArgb(235, 15, 70, 65), Color.FromArgb(235, 65, 155, 125), 35),
             "暖阳橙" => new LinearGradientBrush(Color.FromArgb(235, 100, 45, 18), Color.FromArgb(235, 220, 135, 55), 35),
             "石墨黑" => new LinearGradientBrush(Color.FromArgb(242, 18, 21, 29), Color.FromArgb(242, 58, 65, 78), 35),
+            "海盐青" => new LinearGradientBrush(Color.FromArgb(238, 10, 75, 82), Color.FromArgb(238, 75, 170, 160), 35),
+            "暮色玫瑰" => new LinearGradientBrush(Color.FromArgb(238, 75, 35, 65), Color.FromArgb(238, 190, 100, 130), 35),
+            "冰川蓝" => new LinearGradientBrush(Color.FromArgb(238, 35, 85, 130), Color.FromArgb(238, 145, 205, 225), 35),
+            "薰衣草" => new LinearGradientBrush(Color.FromArgb(238, 80, 65, 125), Color.FromArgb(238, 175, 145, 210), 35),
+            "森林绿" => new LinearGradientBrush(Color.FromArgb(238, 20, 65, 48), Color.FromArgb(238, 90, 145, 95), 35),
+            "奶油黄" => new LinearGradientBrush(Color.FromArgb(238, 115, 85, 35), Color.FromArgb(238, 225, 195, 115), 35),
             _ => new LinearGradientBrush(new GradientStopCollection {
                 new GradientStop(Color.FromArgb(235, 30, 65, 125), 0.0),
                 new GradientStop(Color.FromArgb(235, 115, 55, 145), 0.34),
@@ -275,8 +298,74 @@ sealed class TranslatorWindow : Window
                 new GradientStop(Color.FromArgb(235, 180, 90, 120), 1.0)
             }, 35)
         };
-        backdropLayer.Background = brush;
+        backdropLayer.Background = uploadedBackground != null && choice == "用户图片" ? uploadedBackground : brush;
     }
+
+    void ChooseBackgroundImage()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "选择背景图片",
+            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.gif|所有文件|*.*",
+            CheckFileExists = true
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            int restore = backgroundChoice.Items.IndexOf(currentBackground);
+            backgroundChoice.SelectedIndex = restore >= 0 ? restore : 0;
+            return;
+        }
+        try
+        {
+            var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(dialog.FileName);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            uploadedBackground = new ImageBrush(bitmap) { Stretch = Stretch.UniformToFill };
+            currentBackground = "用户图片";
+            backdropLayer!.Background = uploadedBackground;
+            backgroundChoice.SelectedItem = "上传图片…";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "无法加载图片：" + ex.Message, "背景图片", MessageBoxButton.OK, MessageBoxImage.Warning);
+            backgroundChoice.SelectedIndex = 0;
+        }
+    }
+
+    void UpdateUiLanguage()
+    {
+        string code = Languages.FirstOrDefault(x => x.Name == targetLang.SelectedItem?.ToString()).Code ?? "en";
+        var words = UiWords.TryGetValue(code, out var localized) ? localized : UiWords["en"];
+        Title = words[0];
+        if (titleText != null) titleText.Text = words[0];
+        if (inputHint != null) inputHint.Text = words[1];
+        if (outputLabel != null) outputLabel.Text = words[2];
+        translateButton.Content = words[3];
+        if (hideButton != null) hideButton.Content = words[4];
+        if (pinButton != null) pinButton.Content = words[5];
+        charCount.ToolTip = words[6];
+        backgroundChoice.ToolTip = words[7];
+    }
+
+    static readonly Dictionary<string, string[]> UiWords = new()
+    {
+        ["zh-CN"] = new[] { "Translate", "请输入要翻译的内容...", "译文", "翻译 · F5", "隐藏窗口 · F4", "置顶", "字符数", "选择窗口背景" },
+        ["en"] = new[] { "Translate", "Enter text to translate...", "Translation", "Translate · F5", "Hide · F4", "Always on top", "Character count", "Choose background" },
+        ["ja"] = new[] { "Translate", "翻訳するテキストを入力...", "翻訳結果", "翻訳 · F5", "非表示 · F4", "最前面に表示", "文字数", "背景を選択" },
+        ["ko"] = new[] { "Translate", "번역할 내용을 입력하세요...", "번역 결과", "번역 · F5", "숨기기 · F4", "항상 위에", "글자 수", "배경 선택" },
+        ["fr"] = new[] { "Translate", "Saisissez le texte à traduire...", "Traduction", "Traduire · F5", "Masquer · F4", "Toujours au premier plan", "Nombre de caractères", "Choisir l’arrière-plan" },
+        ["de"] = new[] { "Translate", "Text zum Übersetzen eingeben...", "Übersetzung", "Übersetzen · F5", "Ausblenden · F4", "Immer im Vordergrund", "Zeichenanzahl", "Hintergrund wählen" },
+        ["es"] = new[] { "Translate", "Escribe el texto que quieres traducir...", "Traducción", "Traducir · F5", "Ocultar · F4", "Siempre visible", "Recuento de caracteres", "Elegir fondo" },
+        ["it"] = new[] { "Translate", "Inserisci il testo da tradurre...", "Traduzione", "Traduci · F5", "Nascondi · F4", "Sempre in primo piano", "Conteggio caratteri", "Scegli sfondo" },
+        ["pt"] = new[] { "Translate", "Digite o texto para traduzir...", "Tradução", "Traduzir · F5", "Ocultar · F4", "Sempre no topo", "Contagem de caracteres", "Escolher fundo" },
+        ["ru"] = new[] { "Translate", "Введите текст для перевода...", "Перевод", "Перевести · F5", "Скрыть · F4", "Поверх всех окон", "Количество символов", "Выбрать фон" },
+        ["ar"] = new[] { "Translate", "أدخل النص للترجمة...", "الترجمة", "ترجم · F5", "إخفاء · F4", "دائماً في المقدمة", "عدد الأحرف", "اختر الخلفية" },
+        ["hi"] = new[] { "Translate", "अनुवाद के लिए टेक्स्ट दर्ज करें...", "अनुवाद", "अनुवाद करें · F5", "छिपाएँ · F4", "हमेशा ऊपर", "अक्षर संख्या", "पृष्ठभूमि चुनें" },
+        ["zh-TW"] = new[] { "Translate", "請輸入要翻譯的內容...", "譯文", "翻譯 · F5", "隱藏視窗 · F4", "置頂", "字元數", "選擇背景" }
+    };
 
     static readonly (string Name, string Code)[] Languages =
     {
