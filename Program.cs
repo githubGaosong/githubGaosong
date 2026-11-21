@@ -85,7 +85,7 @@ sealed class TranslatorWindow : Window
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         frame.Child = layout; root.Children.Add(frame); Content = root;
         // Any part of the window can start a drag. A small movement threshold
         // preserves normal button clicks; dragging starts only after the pointer moves.
@@ -181,17 +181,17 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 44; translateButton.Margin = new Thickness(0,0,20,0);
+        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 34; translateButton.Margin = new Thickness(0,0,12,0);
         translateButton.Background = Accent; translateButton.Foreground = Brushes.White;
         translateButton.BorderBrush = GlassBorder;
-        translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 18; translateButton.FontWeight = FontWeights.Bold;
+        translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 14; translateButton.FontWeight = FontWeights.Bold;
         translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
         translateButton.Template = PillTemplate();
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
 
-        var hide = PillButton("隐藏窗口 · F4"); hide.Margin = new Thickness(8,0,8,0);
+        var hide = PillButton("隐藏窗口 · F4"); hide.Margin = new Thickness(5,0,5,0);
         hide.Click += (_, _) => Hide(); Grid.SetColumn(hide,1); footer.Children.Add(hide);
-        var pin = PillButton("置顶"); pin.Margin = new Thickness(20,0,0,0);
+        var pin = PillButton("置顶"); pin.Margin = new Thickness(12,0,0,0);
         topmost.Content = pin.Content; topmost.IsChecked = true; topmost.Foreground = WhiteBrush;
         topmost.VerticalAlignment = VerticalAlignment.Center; topmost.HorizontalAlignment = HorizontalAlignment.Stretch;
         topmost.Checked += (_, _) => Topmost = true; topmost.Unchecked += (_, _) => Topmost = false;
@@ -248,8 +248,10 @@ sealed class TranslatorWindow : Window
         hover.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(150, 255, 255, 255))));
         template.Triggers.Add(hover);
         var pressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
-        pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(115, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(145, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(220, 255, 255, 255))));
         pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
+        pressed.Setters.Add(new Setter(UIElement.OpacityProperty, 0.78));
         template.Triggers.Add(pressed);
         var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.42));
@@ -295,9 +297,9 @@ sealed class TranslatorWindow : Window
         return template;
     }
 
-    static Button PillButton(string text) => new() { Content = text, Height = 44, Background = GlassPanel,
-        BorderBrush = GlassBorder, BorderThickness = new Thickness(1.5), Foreground = Brushes.White,
-        FontSize = 16, Cursor = Cursors.Hand, Template = PillTemplate() };
+    static Button PillButton(string text) => new() { Content = text, Height = 34, Background = GlassPanel,
+        BorderBrush = GlassBorder, BorderThickness = new Thickness(1.2), Foreground = Brushes.White,
+        FontSize = 13, FontWeight = FontWeights.Medium, Cursor = Cursors.Hand, Template = PillTemplate() };
 
     static void StyleEditor(TextBox box, bool readOnly)
     {
