@@ -46,9 +46,9 @@ sealed class TranslatorWindow : Window
 
     static readonly Color White = Color.FromRgb(246, 249, 253);
     static readonly Color Muted = Color.FromRgb(190, 205, 221);
-    static readonly Brush Glass = new LinearGradientBrush(Color.FromArgb(222, 38, 61, 84), Color.FromArgb(207, 19, 39, 59), 90);
-    static readonly Brush FieldBrush = new SolidColorBrush(Color.FromArgb(58, 8, 22, 38));
-    static readonly Brush ResultBrush = new SolidColorBrush(Color.FromArgb(72, 44, 103, 145));
+    static readonly Brush Glass = new LinearGradientBrush(Color.FromArgb(245, 38, 68, 166), Color.FromArgb(238, 23, 48, 126), 90);
+    static readonly Brush FieldBrush = Brushes.Transparent;
+    static readonly Brush ResultBrush = Brushes.Transparent;
     static readonly Brush PaleBlue = new LinearGradientBrush(Color.FromRgb(190, 225, 250), Color.FromRgb(139, 194, 235), 90);
 
     public TranslatorWindow()
@@ -97,7 +97,7 @@ sealed class TranslatorWindow : Window
         direction.SelectedIndex = 0;
         direction.Width = 210; direction.Height = 38; direction.Margin = new Thickness(10, 0, 12, 0);
         direction.VerticalContentAlignment = VerticalAlignment.Center;
-        direction.Background = new SolidColorBrush(Color.FromArgb(110, 30, 49, 69));
+        direction.Background = Brushes.Transparent;
         direction.Foreground = Brushes.White;
         direction.BorderBrush = new SolidColorBrush(Color.FromArgb(90, 218, 231, 244));
         Grid.SetColumn(direction, 1); header.Children.Add(direction);
@@ -135,7 +135,7 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         translateButton.Content = "翻译  ·  F5";
         translateButton.Width = 144; translateButton.Height = 44;
-        translateButton.Background = PaleBlue; translateButton.Foreground = Brushes.White;
+        translateButton.Background = new SolidColorBrush(Color.FromArgb(105, 190, 225, 250)); translateButton.Foreground = Brushes.White;
         translateButton.BorderThickness = new Thickness(0); translateButton.FontWeight = FontWeights.SemiBold;
         translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
         Grid.SetColumn(translateButton, 0); footer.Children.Add(translateButton);
@@ -169,7 +169,7 @@ sealed class TranslatorWindow : Window
     }
 
     static Button HeaderButton(string text) => new() { Content = text, Width = 34, Height = 36,
-        Margin = new Thickness(4, 0, 0, 0), Background = new SolidColorBrush(Color.FromArgb(65, 230, 240, 250)),
+        Margin = new Thickness(4, 0, 0, 0), Background = new SolidColorBrush(Color.FromArgb(35, 230, 240, 250)),
         Foreground = Brushes.White, BorderThickness = new Thickness(0), FontSize = 18, Cursor = Cursors.Hand };
 
     static TextBlock SectionTitle(string text) => new() { Text = text, FontSize = 16,
@@ -183,8 +183,7 @@ sealed class TranslatorWindow : Window
         box.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
         box.FontSize = 16; box.Padding = new Thickness(14, 12, 14, 12);
         box.Foreground = new SolidColorBrush(White); box.Background = readOnly ? ResultBrush : FieldBrush;
-        box.BorderBrush = readOnly ? new SolidColorBrush(Color.FromArgb(175, 84, 159, 221))
-            : new SolidColorBrush(Color.FromArgb(70, 217, 230, 243));
+        box.BorderBrush = new SolidColorBrush(Color.FromArgb(105, 224, 240, 255));
         box.BorderThickness = new Thickness(1); box.IsReadOnly = readOnly;
         box.TextChanged += (_, _) => { };
         box.ToolTip = hint;
