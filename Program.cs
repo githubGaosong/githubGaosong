@@ -212,11 +212,11 @@ sealed class TranslatorWindow : Window
         outputPanel.Child = outputGrid;
         Grid.SetRow(outputPanel,3); layout.Children.Add(outputPanel);
 
-        var footer = new Grid { Margin = new Thickness(4,0,4,0), MaxWidth = 700, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var footer = new Grid { Margin = new Thickness(24,0,24,0), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 44; translateButton.Margin = new Thickness(0,0,10,0);
+        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 44; translateButton.Margin = new Thickness(0,0,8,0);
         translateButton.Background = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
         translateButton.Foreground = Brushes.White;
         translateButton.BorderBrush = GlassBorder;
@@ -225,11 +225,11 @@ sealed class TranslatorWindow : Window
         translateButton.Template = PillTemplate();
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
 
-        var hide = PillButton("隐藏窗口 · F4"); hideButton = hide; hide.Height = 44; hide.Margin = new Thickness(6,0,6,0);
+        var hide = PillButton("隐藏窗口 · F4"); hideButton = hide; hide.Height = 44; hide.Margin = new Thickness(4,0,4,0);
         hide.Background = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
         hide.BorderBrush = GlassBorder;
         hide.Click += (_, _) => Hide(); Grid.SetColumn(hide,1); footer.Children.Add(hide);
-        var pin = PillButton("置顶"); pinButton = pin; pin.Height = 44; pin.Margin = new Thickness(10,0,0,0);
+        var pin = PillButton("置顶"); pinButton = pin; pin.Height = 44; pin.Margin = new Thickness(8,0,0,0);
         pin.Background = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
         pin.BorderBrush = GlassBorder;
         topmost.Content = pin.Content; topmost.IsChecked = true; topmost.Foreground = WhiteBrush;
