@@ -161,19 +161,27 @@ sealed class TranslatorWindow : Window
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         var outputHeader = new Grid { Margin = new Thickness(24,0,24,0) };
+        outputHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        outputHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var outputLabel = new TextBlock { Text = "译文", FontSize = 15, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center };
         this.outputLabel = outputLabel;
-        outputHeader.Children.Add(outputLabel);
+        Grid.SetColumn(outputLabel, 0); outputHeader.Children.Add(outputLabel);
+        var clearTranslation = PillButton("清空");
+        clearTranslation.Width = 54; clearTranslation.Height = 28; clearTranslation.FontSize = 12;
+        clearTranslation.Margin = new Thickness(8, 0, 0, 0);
+        clearTranslation.ToolTip = "清空译文";
+        clearTranslation.Click += (_, _) => { translated.Clear(); translated.Focus(); };
+        Grid.SetColumn(clearTranslation, 1); outputHeader.Children.Add(clearTranslation);
         outputGrid.Children.Add(outputHeader);
         var outputDivider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(55,255,255,255)),
             VerticalAlignment = VerticalAlignment.Bottom };
-        outputHeader.Children.Add(outputDivider);
-        StyleEditor(translated, false); translated.FontSize = 16; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
+        Grid.SetColumnSpan(outputDivider, 2); outputHeader.Children.Add(outputDivider);
+        StyleEditor(translated, false); translated.IsReadOnly = false; translated.IsEnabled = true; translated.SelectionBrush = new SolidColorBrush(Color.FromArgb(150, 90, 170, 255)); translated.FontSize = 16; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
         // Match the input editor's 20px panel inset so both vertical scrollbars share one vertical line.
         translated.Margin = new Thickness(0, 0, 20, 0);
         translated.Background = Brushes.Transparent; translated.BorderThickness = new Thickness(0);
-        translated.ToolTip = "翻译结果将显示在这里...";
+        translated.ToolTip = "可直接编辑译文；支持选中、删除、替换和补充文字。";
         Grid.SetRow(translated,1); outputGrid.Children.Add(translated);
         outputPanel.Child = outputGrid;
         Grid.SetRow(outputPanel,3); layout.Children.Add(outputPanel);
@@ -234,7 +242,7 @@ sealed class TranslatorWindow : Window
     UIElement CreateBackdrop()
     {
         backdropLayer = new Grid { IsHitTestVisible = false };
-        ApplyBackground("彩虹渐变");
+        ApplyBackground("半透明玻璃 · 默认");
         return backdropLayer;
     }
 
@@ -259,15 +267,15 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Items.Add("奶油黄");
         backgroundChoice.Items.Add("上传图片…");
         backgroundChoice.SelectedIndex = 0;
-        backgroundChoice.Width = 154;
-        backgroundChoice.Height = 34;
+        backgroundChoice.Width = 172;
+        backgroundChoice.Height = 38;
         backgroundChoice.FontSize = 12;
         backgroundChoice.FontWeight = FontWeights.SemiBold;
         backgroundChoice.Foreground = Brushes.White;
-        backgroundChoice.Background = new SolidColorBrush(Color.FromArgb(58, 255, 255, 255));
-        backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(145, 220, 238, 255));
-        backgroundChoice.BorderThickness = new Thickness(1.2);
-        backgroundChoice.Padding = new Thickness(10, 0, 26, 0);
+        backgroundChoice.Background = new LinearGradientBrush(Color.FromArgb(92, 92, 158, 205), Color.FromArgb(62, 145, 112, 190), 25);
+        backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(205, 180, 225, 255));
+        backgroundChoice.BorderThickness = new Thickness(1.3);
+        backgroundChoice.Padding = new Thickness(12, 0, 30, 0);
         backgroundChoice.VerticalContentAlignment = VerticalAlignment.Center;
         backgroundChoice.HorizontalContentAlignment = HorizontalAlignment.Left;
         backgroundChoice.Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 2, Opacity = 0.2, Color = Colors.Black };
@@ -443,21 +451,23 @@ sealed class TranslatorWindow : Window
 
     static ControlTemplate LanguageComboTemplate()
     {
-        // Keep the ToggleButton's visual tree inside its own ControlTemplate.
-        // Previously its Border was appended as a child of ToggleButton itself,
-        // which can prevent the dropdown toggle from receiving clicks reliably.
-        var grid = new FrameworkElementFactory(typeof(Grid));
+        // A glass surface now owns the background/border, while the transparent
+        // toggle overlays it so the full selector remains clickable.
+        var surface = new FrameworkElementFactory(typeof(Border));
+        surface.SetValue(Border.CornerRadiusProperty, new CornerRadius(15));
+        surface.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        surface.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        surface.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        surface.SetValue(UIElement.ClipToBoundsProperty, true);
 
+        var grid = new FrameworkElementFactory(typeof(Grid));
         var toggle = new FrameworkElementFactory(typeof(ToggleButton));
         toggle.SetValue(ToggleButton.FocusableProperty, false);
         toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-        var toggleBorder = new FrameworkElementFactory(typeof(Border));
-        toggleBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
-        toggleBorder.SetValue(Border.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(Control.TemplateProperty, new ControlTemplate(typeof(ToggleButton))
         {
-            VisualTree = toggleBorder
+            VisualTree = new FrameworkElementFactory(typeof(Border))
         });
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
         {
@@ -470,15 +480,15 @@ sealed class TranslatorWindow : Window
         selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
         selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(12, 0, 28, 0));
+        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(13, 0, 34, 0));
         selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
         grid.AppendChild(selected);
 
         var arrow = new FrameworkElementFactory(typeof(TextBlock));
         arrow.SetValue(TextBlock.TextProperty, "⌄");
-        arrow.SetValue(TextBlock.FontSizeProperty, 17.0);
-        arrow.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
-        arrow.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromArgb(225, 245, 250, 255)));
+        arrow.SetValue(TextBlock.FontSizeProperty, 16.0);
+        arrow.SetValue(TextBlock.FontWeightProperty, FontWeights.Bold);
+        arrow.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromArgb(235, 235, 247, 255)));
         arrow.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
         arrow.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
         arrow.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 12, 3));
@@ -500,12 +510,13 @@ sealed class TranslatorWindow : Window
             RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
         });
         var popupBorder = new FrameworkElementFactory(typeof(Border));
-        popupBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(248, 24, 31, 44)));
-        popupBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(210, 205, 220, 242)));
-        popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        popupBorder.SetValue(Border.BackgroundProperty, new LinearGradientBrush(Color.FromArgb(250, 25, 43, 67), Color.FromArgb(248, 48, 54, 82), 25));
+        popupBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(205, 155, 205, 245)));
+        popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1.1));
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(14));
-        popupBorder.SetValue(Border.PaddingProperty, new Thickness(4));
+        popupBorder.SetValue(Border.PaddingProperty, new Thickness(5));
         popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 6, 0, 0));
+        popupBorder.Effect = new DropShadowEffect { BlurRadius = 16, ShadowDepth = 4, Opacity = 0.28, Color = Colors.Black };
         var popupScroll = new FrameworkElementFactory(typeof(ScrollViewer));
         popupScroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
         popupScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
@@ -515,7 +526,8 @@ sealed class TranslatorWindow : Window
         popup.AppendChild(popupBorder);
         grid.AppendChild(popup);
 
-        return new ControlTemplate(typeof(ComboBox)) { VisualTree = grid };
+        surface.AppendChild(grid);
+        return new ControlTemplate(typeof(ComboBox)) { VisualTree = surface };
     }
 
     static ControlTemplate LanguageItemTemplate()
