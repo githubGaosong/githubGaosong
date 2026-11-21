@@ -251,7 +251,7 @@ sealed class TranslatorWindow : Window
         var toggle = new FrameworkElementFactory(typeof(ToggleButton));
         toggle.SetValue(ToggleButton.FocusableProperty, false);
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
-        { RelativeSource = RelativeSource.TemplatedParent, Mode = System.Windows.Data.BindingMode.TwoWay });
+        { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent, Mode = System.Windows.Data.BindingMode.TwoWay });
         var chrome = new FrameworkElementFactory(typeof(Border));
         chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(18));
         chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
@@ -273,7 +273,7 @@ sealed class TranslatorWindow : Window
         popup.SetValue(Popup.FocusableProperty, false);
         popup.SetValue(Popup.PopupAnimationProperty, PopupAnimation.Fade);
         popup.SetBinding(Popup.IsOpenProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
-        { RelativeSource = RelativeSource.TemplatedParent });
+        { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
         var popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(248, 24, 31, 44)));
         popupBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(210, 205, 220, 242)));
