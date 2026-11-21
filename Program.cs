@@ -37,7 +37,6 @@ sealed class TranslatorWindow : Window
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(25) };
     readonly TextBox source = new();
     readonly TextBox translated = new();
-    readonly ComboBox sourceLang = new();
     readonly ComboBox targetLang = new();
     readonly TextBlock charCount = new();
     readonly TextBlock status = new();
@@ -101,17 +100,10 @@ sealed class TranslatorWindow : Window
         var languageRow = new Grid { Margin = new Thickness(0, 4, 0, 12) };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        SetupLanguage(sourceLang, "英文"); SetupLanguage(targetLang, "简体中文");
-        Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
-        var swap = new Button { Content = "⇄", Width = 64, Height = 54, Margin = new Thickness(12,0,12,0),
-            Background = Brushes.Transparent, Foreground = WhiteBrush, BorderThickness = new Thickness(0),
-            FontSize = 30, Cursor = Cursors.Hand };
-        swap.Click += (_, _) => {
-            int old = sourceLang.SelectedIndex; sourceLang.SelectedIndex = targetLang.SelectedIndex; targetLang.SelectedIndex = old;
-        };
-        Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
-        Grid.SetColumn(targetLang, 2); languageRow.Children.Add(targetLang);
+        SetupLanguage(targetLang, "简体中文");
+        targetLang.Width = 250;
+        targetLang.HorizontalAlignment = HorizontalAlignment.Right;
+        Grid.SetColumn(targetLang, 1); languageRow.Children.Add(targetLang);
         Grid.SetRow(languageRow, 1); layout.Children.Add(languageRow);
 
         var inputPanel = new Border { Background = GlassPanel, BorderBrush = GlassBorder,
@@ -305,7 +297,7 @@ sealed class TranslatorWindow : Window
         request?.Cancel();
         var current = new CancellationTokenSource(); request = current;
         translateButton.IsEnabled = false; status.Text = "正在翻译…";
-        string pair = sourceLang.SelectedIndex == 1 ? "zh-CN|en" : "en|zh-CN";
+        string pair = "autodetect|zh-CN";
         try
         {
             var pieces = Split(input, 450); var output = new List<string>();
