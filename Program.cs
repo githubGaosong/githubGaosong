@@ -224,7 +224,7 @@ sealed class TranslatorWindow : Window
         box.Items.Add("繁體中文"); box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
         box.SelectedItem = selected;
         box.Width = double.NaN; box.Height = 36; box.FontSize = 14; box.FontWeight = FontWeights.Medium;
-        box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(38,255,255,255));
+        box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(14,255,255,255));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(105,240,245,255));
         box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
         box.VerticalContentAlignment = VerticalAlignment.Center;
@@ -253,7 +253,7 @@ sealed class TranslatorWindow : Window
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
         { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent, Mode = System.Windows.Data.BindingMode.TwoWay });
         var chrome = new FrameworkElementFactory(typeof(Border));
-        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(18));
+        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
         chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         chrome.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         chrome.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
