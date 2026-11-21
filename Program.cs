@@ -85,7 +85,7 @@ sealed class TranslatorWindow : Window
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
         frame.Child = layout; root.Children.Add(frame); Content = root;
         // Any part of the window can start a drag. A small movement threshold
         // preserves normal button clicks; dragging starts only after the pointer moves.
@@ -181,10 +181,10 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 34; translateButton.Margin = new Thickness(0,0,12,0);
+        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 42; translateButton.Margin = new Thickness(0,0,12,0);
         translateButton.Background = Accent; translateButton.Foreground = Brushes.White;
         translateButton.BorderBrush = GlassBorder;
-        translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 14; translateButton.FontWeight = FontWeights.Bold;
+        translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 15; translateButton.FontWeight = FontWeights.Bold;
         translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
         translateButton.Template = PillTemplate();
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
@@ -223,7 +223,7 @@ sealed class TranslatorWindow : Window
         box.Items.Add("自动检测"); box.Items.Add("英文"); box.Items.Add("简体中文");
         box.Items.Add("繁體中文"); box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
         box.SelectedItem = selected;
-        box.Width = double.NaN; box.Height = 36; box.FontSize = 14; box.FontWeight = FontWeights.Medium;
+        box.Width = double.NaN; box.Height = 40; box.FontSize = 14; box.FontWeight = FontWeights.Medium;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(30, 10, 17, 29));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(105,240,245,255));
         box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
@@ -250,10 +250,16 @@ sealed class TranslatorWindow : Window
         var grid = new FrameworkElementFactory(typeof(Grid));
         var toggle = new FrameworkElementFactory(typeof(ToggleButton));
         toggle.SetValue(ToggleButton.FocusableProperty, false);
+        toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
+        toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
+        toggle.SetValue(Control.TemplateProperty, new ControlTemplate(typeof(ToggleButton))
+        {
+            VisualTree = new FrameworkElementFactory(typeof(Border))
+        });
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
         { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent, Mode = System.Windows.Data.BindingMode.TwoWay });
         var chrome = new FrameworkElementFactory(typeof(Border));
-        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(22));
+        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
         chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         chrome.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         chrome.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
@@ -370,9 +376,9 @@ sealed class TranslatorWindow : Window
         return template;
     }
 
-    static Button PillButton(string text) => new() { Content = text, Height = 34, Background = GlassPanel,
+    static Button PillButton(string text) => new() { Content = text, Height = 42, Background = GlassPanel,
         BorderBrush = GlassBorder, BorderThickness = new Thickness(1.2), Foreground = Brushes.White,
-        FontSize = 13, FontWeight = FontWeights.Medium, Cursor = Cursors.Hand, Template = PillTemplate() };
+        FontSize = 14, FontWeight = FontWeights.Medium, Cursor = Cursors.Hand, Template = PillTemplate() };
 
     static void StyleEditor(TextBox box, bool readOnly)
     {
