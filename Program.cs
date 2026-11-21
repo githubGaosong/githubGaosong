@@ -86,7 +86,7 @@ sealed class TranslatorWindow : Window
             Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(26),
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
-            BorderThickness = new Thickness(1.5), Padding = new Thickness(12, 14, 12, 12)
+            BorderThickness = new Thickness(1.5), Padding = new Thickness(18, 16, 18, 14)
         };
         var layout = new Grid { ClipToBounds = false, SnapsToDevicePixels = true };
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
@@ -95,7 +95,7 @@ sealed class TranslatorWindow : Window
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
         frame.Child = layout; root.Children.Add(frame); Content = root;
-        var header = new Grid();
+        var header = new Grid { Margin = new Thickness(8, 0, 4, 0), ClipToBounds = false };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -114,7 +114,7 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
-        var languageRow = new Grid { Margin = new Thickness(0, 2, 0, 14), VerticalAlignment = VerticalAlignment.Stretch };
+        var languageRow = new Grid { Margin = new Thickness(6, 4, 6, 16), VerticalAlignment = VerticalAlignment.Stretch, ClipToBounds = false };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -124,12 +124,12 @@ sealed class TranslatorWindow : Window
         sourceLang.Width = double.NaN; targetLang.Width = double.NaN;
         sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
         targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
-        sourceLang.Margin = new Thickness(3, 2, 3, 2);
-        targetLang.Margin = new Thickness(3, 2, 3, 2);
+        sourceLang.Margin = new Thickness(4, 3, 4, 3);
+        targetLang.Margin = new Thickness(4, 3, 4, 3);
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
-        var swap = new TextBlock { Text = "→", FontSize = 25, Foreground = WhiteBrush,
+        var swap = new TextBlock { Text = "→", FontSize = 23, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(12, 0, 12, 0) };
+            Margin = new Thickness(10, 0, 10, 0) };
         Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
         targetLang.SelectionChanged += (_, _) => UpdateUiLanguage();
         Grid.SetColumn(targetLang, 2); languageRow.Children.Add(targetLang);
@@ -494,22 +494,12 @@ sealed class TranslatorWindow : Window
 
         var selected = new FrameworkElementFactory(typeof(ContentPresenter));
         selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
-        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(13, 0, 34, 0));
+        selected.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(12, 0, 12, 0));
         selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
         grid.AppendChild(selected);
-
-        var arrow = new FrameworkElementFactory(typeof(TextBlock));
-        arrow.SetValue(TextBlock.TextProperty, "⌄");
-        arrow.SetValue(TextBlock.FontSizeProperty, 16.0);
-        arrow.SetValue(TextBlock.FontWeightProperty, FontWeights.Bold);
-        arrow.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromArgb(235, 235, 247, 255)));
-        arrow.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-        arrow.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        arrow.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 12, 3));
-        arrow.SetValue(UIElement.IsHitTestVisibleProperty, false);
-        grid.AppendChild(arrow);
 
         var popup = new FrameworkElementFactory(typeof(Popup));
         popup.Name = "PART_Popup";
