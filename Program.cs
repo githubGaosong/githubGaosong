@@ -1,388 +1,291 @@
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
+using System.Windows.Shapes;
+using System.Windows.Interop;
+using System.Windows.Shell;
 
 internal static class Program
 {
     [STAThread]
-    static void Main()
+    public static void Main()
     {
-        ApplicationConfiguration.Initialize();
-        Application.Run(new TranslatorWindow());
+        var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
+        app.Run(new TranslatorWindow());
     }
 }
 
-sealed class TranslatorWindow : Form
+sealed class TranslatorWindow : Window
 {
-    const int HotkeyMessage = 0x0312;
-    const int TranslateHotkey = 1, ToggleHotkey = 2;
-    const uint NoRepeat = 0x4000, F4 = 0x73, F5 = 0x74;
-    const int WmNclButtonDown = 0xA1, HtCaption = 0x2;
-    const int WmNcHitTest = 0x84;
-    const int HtLeft = 10, HtRight = 11, HtTop = 12, HtTopLeft = 13, HtTopRight = 14;
-    const int HtBottom = 15, HtBottomLeft = 16, HtBottomRight = 17;
-    const int DwmwaUseImmersiveDarkMode = 20;
-    const int DwmwaWindowCornerPreference = 33;
-    const int DwmwaSystemBackdropType = 38;
-    const int DwmwaBorderColor = 34;
+    const int WmHotkey = 0x0312;
+    const int HotkeyTranslate = 1, HotkeyToggle = 2;
+    const uint NoRepeat = 0x4000, VkF4 = 0x73, VkF5 = 0x74;
+    const int DwmwaSystemBackdropType = 38, DwmwaUseImmersiveDarkMode = 20, DwmwaCornerPreference = 33;
+    [DllImport("user32.dll", SetLastError = true)] static extern bool RegisterHotKey(IntPtr hWnd, int id, uint modifiers, uint vk);
+    [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+    [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    static extern bool RegisterHotKey(IntPtr window, int id, uint modifiers, uint key);
-    [DllImport("user32.dll")]
-    static extern bool UnregisterHotKey(IntPtr window, int id);
-    [DllImport("user32.dll")]
-    static extern bool ReleaseCapture();
-    [DllImport("user32.dll")]
-    static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
-    [DllImport("dwmapi.dll")]
-    static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
-
-    static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(20) };
-    readonly TextBox original = new();
-    readonly TextBox result = new();
-    readonly ComboBox target = new();
-    readonly Button translate = new();
-    readonly Label status = new();
-    readonly CheckBox alwaysOnTop = new();
-    readonly Panel header = new();
+    static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(25) };
+    readonly TextBox source = new();
+    readonly TextBox translated = new();
+    readonly ComboBox direction = new();
+    readonly TextBlock status = new();
+    readonly Button translateButton = new();
+    readonly CheckBox topmost = new();
+    HwndSource? hwndSource;
     CancellationTokenSource? request;
 
-    static readonly Color Ink = Color.FromArgb(250, 252, 255);
-    static readonly Color Muted = Color.FromArgb(220, 231, 243);
-    static readonly Color Field = Color.FromArgb(63, 80, 99);
-    static readonly Color FieldGreen = Color.FromArgb(59, 91, 119);
-    static readonly Color Accent = Color.FromArgb(55, 145, 235);
+    static readonly Color White = Color.FromRgb(246, 249, 253);
+    static readonly Color Muted = Color.FromRgb(190, 205, 221);
+    static readonly Brush Glass = new SolidColorBrush(Color.FromArgb(214, 25, 43, 63));
+    static readonly Brush FieldBrush = new SolidColorBrush(Color.FromArgb(74, 8, 22, 38));
+    static readonly Brush ResultBrush = new SolidColorBrush(Color.FromArgb(62, 44, 103, 145));
+    static readonly Brush Blue = new SolidColorBrush(Color.FromRgb(74, 164, 246));
 
     public TranslatorWindow()
     {
-        Text = "Tanslator";
-        FormBorderStyle = FormBorderStyle.None;
-        ClientSize = new Size(760, 640);
-        MinimumSize = new Size(680, 580);
-        StartPosition = FormStartPosition.CenterScreen;
-        TopMost = true;
-        Opacity = 0.96;
-        BackColor = Color.FromArgb(35, 54, 76);
-        ForeColor = Ink;
-        Font = new Font("Microsoft YaHei UI", 9.5f);
-        Padding = new Padding(24);
+        Title = "Tanslator";
+        Width = 850; Height = 660; MinWidth = 650; MinHeight = 560;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.CanResize;
+        AllowsTransparency = false;
+        Background = Glass;
+        Foreground = new SolidColorBrush(White);
+        FontFamily = new FontFamily("Microsoft YaHei UI");
+        FontSize = 14;
+        Topmost = true;
+        ShowInTaskbar = true;
 
-        header.SetBounds(0, 0, 712, 64);
-        header.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        header.BackColor = Color.FromArgb(74, 96, 119);
-        header.MouseDown += DragWindow;
-
-        var mark = new Label {
-            Text = "文A", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(241, 250, 249), BackColor = Color.FromArgb(74, 119, 130),
-            Font = new Font("Microsoft YaHei UI", 13, FontStyle.Bold),
-            BorderStyle = BorderStyle.FixedSingle
-        };
-        mark.SetBounds(18, 10, 42, 42);
-        mark.MouseDown += DragWindow;
-
-        var heading = new Label {
-            Text = "Tanslator", AutoSize = false, TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = Ink, Font = new Font("Microsoft YaHei UI", 16, FontStyle.Bold)
-        };
-        heading.SetBounds(70, 8, 210, 46);
-        heading.MouseDown += DragWindow;
-
-        target.Items.AddRange(new object[] { "翻译成中文", "翻译成英文" });
-        target.SelectedIndex = 0;
-        target.DropDownStyle = ComboBoxStyle.DropDownList;
-        target.SetBounds(430, 16, 210, 34);
-        target.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        target.BackColor = Color.FromArgb(53, 68, 84);
-        target.ForeColor = Color.White;
-        target.FlatStyle = FlatStyle.Flat;
-
-        var minimize = HeaderButton("—");
-        minimize.SetBounds(650, 14, 28, 32);
-        minimize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        minimize.Click += (_, _) => WindowState = FormWindowState.Minimized;
-
-        var close = HeaderButton("×");
-        close.SetBounds(684, 14, 28, 32);
-        close.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        close.Click += (_, _) => Close();
-
-        header.Controls.AddRange(new Control[] { mark, heading, target, minimize, close });
-
-        var originalLabel = SectionLabel("原文");
-        originalLabel.SetBounds(28, 92, 500, 26);
-        original.SetBounds(24, 126, 712, 170);
-        original.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        original.Multiline = true;
-        original.AcceptsReturn = true;
-        original.ScrollBars = ScrollBars.Vertical;
-        original.Font = new Font("Microsoft YaHei UI", 12f);
-        original.PlaceholderText = "在这里粘贴需要翻译的文字…";
-        StyleTextBox(original, Color.FromArgb(53, 68, 86));
-
-        var divider = new Panel {
-            BackColor = Color.FromArgb(70, 128, 145, 163)
-        };
-        divider.SetBounds(24, 316, 712, 1);
-        divider.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-
-        var resultLabel = SectionLabel("译文");
-        resultLabel.ForeColor = Color.FromArgb(151, 224, 207);
-        resultLabel.SetBounds(28, 338, 500, 26);
-        result.SetBounds(24, 372, 712, 170);
-        result.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        result.Multiline = true;
-        result.ReadOnly = true;
-        result.ScrollBars = ScrollBars.Vertical;
-        result.Font = new Font("Microsoft YaHei UI", 12.5f);
-        StyleTextBox(result, Color.FromArgb(55, 83, 112));
-
-        translate.Text = "翻译  ·  F5";
-        translate.SetBounds(28, 566, 138, 42);
-        translate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-        translate.FlatStyle = FlatStyle.Flat;
-        translate.FlatAppearance.BorderSize = 0;
-        translate.FlatAppearance.MouseOverBackColor = Color.FromArgb(102, 184, 166);
-        translate.BackColor = Accent;
-        translate.ForeColor = Color.White;
-        translate.Font = new Font("Microsoft YaHei UI", 10, FontStyle.Bold);
-        translate.Cursor = Cursors.Hand;
-        translate.Click += async (_, _) => await TranslateAsync();
-
-        alwaysOnTop.Text = "窗口置顶";
-        alwaysOnTop.Checked = true;
-        alwaysOnTop.AutoSize = true;
-        alwaysOnTop.SetBounds(580, 574, 120, 28);
-        alwaysOnTop.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-        alwaysOnTop.ForeColor = Muted;
-        alwaysOnTop.BackColor = Color.Transparent;
-        alwaysOnTop.CheckedChanged += (_, _) => TopMost = alwaysOnTop.Checked;
-
-        status.Text = "F4 显示 / 隐藏窗口";
-        status.AutoSize = true;
-        status.SetBounds(190, 576, 360, 24);
-        status.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        status.ForeColor = Muted;
-
-        Controls.AddRange(new Control[] {
-            header, originalLabel, original, divider, resultLabel, result,
-            translate, alwaysOnTop, status
+        WindowChrome.SetWindowChrome(this, new WindowChrome {
+            CaptionHeight = 0, ResizeBorderThickness = new Thickness(8),
+            CornerRadius = new CornerRadius(18), GlassFrameThickness = new Thickness(0),
+            UseAeroCaptionButtons = false
         });
 
-        Resize += (_, _) => ApplyRoundedRegion();
-        Shown += (_, _) => {
-            ApplyRoundedRegion();
-            ApplyDwmBackdrop();
+        var outer = new Border {
+            Background = Glass, CornerRadius = new CornerRadius(18),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(210, 206, 220, 234)),
+            BorderThickness = new Thickness(1.4), Padding = new Thickness(22),
+            Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 4, Opacity = .22, Color = Colors.Black }
         };
-        FormClosing += (_, _) => {
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(62) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(68) });
+        outer.Child = layout;
+        Content = outer;
+
+        var header = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var icon = MakeTIcon();
+        icon.Margin = new Thickness(0, 0, 16, 0);
+        header.Children.Add(icon);
+        var title = new TextBlock { Text = "Tanslator", FontSize = 28, FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(White), VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(title, 1); header.Children.Add(title);
+
+        direction.Items.Add("英文  →  简体中文");
+        direction.Items.Add("简体中文  →  英文");
+        direction.SelectedIndex = 0;
+        direction.Width = 210; direction.Height = 38; direction.Margin = new Thickness(10, 0, 12, 0);
+        direction.VerticalContentAlignment = VerticalAlignment.Center;
+        direction.Background = new SolidColorBrush(Color.FromArgb(110, 30, 49, 69));
+        direction.Foreground = Brushes.White;
+        direction.BorderBrush = new SolidColorBrush(Color.FromArgb(90, 218, 231, 244));
+        Grid.SetColumn(direction, 2); header.Children.Add(direction);
+        var minimize = HeaderButton("—"); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
+        Grid.SetColumn(minimize, 3); header.Children.Add(minimize);
+        var close = HeaderButton("×"); close.Click += (_, _) => Close();
+        Grid.SetColumn(close, 4); header.Children.Add(close);
+        Grid.SetRow(header, 0); layout.Children.Add(header);
+
+        var sourceLabel = SectionTitle("原文");
+        Grid.SetRow(sourceLabel, 1); layout.Children.Add(sourceLabel);
+        StyleEditor(source, "在这里粘贴需要翻译的文字…", false);
+        source.Margin = new Thickness(0, 8, 0, 16);
+        Grid.SetRow(source, 2); layout.Children.Add(source);
+
+        var divider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(65, 224, 236, 247)),
+            Margin = new Thickness(0, 0, 0, 14) };
+        Grid.SetRow(divider, 3); layout.Children.Add(divider);
+
+        var resultPanel = new Grid();
+        resultPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        resultPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        var resultLabel = SectionTitle("译文");
+        resultLabel.Foreground = new SolidColorBrush(Color.FromRgb(142, 218, 209));
+        resultPanel.Children.Add(resultLabel);
+        StyleEditor(translated, "Translation will appear here…", true);
+        translated.Margin = new Thickness(0, 8, 0, 0);
+        Grid.SetRow(translated, 1); resultPanel.Children.Add(translated);
+        Grid.SetRow(resultPanel, 4); layout.Children.Add(resultPanel);
+
+        var footer = new Grid { Margin = new Thickness(0, 16, 0, 0) };
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        translateButton.Content = "翻译  ·  F5";
+        translateButton.Width = 144; translateButton.Height = 44;
+        translateButton.Background = Blue; translateButton.Foreground = Brushes.White;
+        translateButton.BorderThickness = new Thickness(0); translateButton.FontWeight = FontWeights.SemiBold;
+        translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
+        Grid.SetColumn(translateButton, 0); footer.Children.Add(translateButton);
+        var hint = new TextBlock { Text = "F4  显示 / 隐藏窗口", Foreground = new SolidColorBrush(Muted),
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(28, 0, 0, 0) };
+        Grid.SetColumn(hint, 1); footer.Children.Add(hint);
+        topmost.Content = "窗口置顶"; topmost.IsChecked = true; topmost.Foreground = new SolidColorBrush(Muted);
+        topmost.VerticalAlignment = VerticalAlignment.Center; topmost.Checked += (_, _) => Topmost = true;
+        topmost.Unchecked += (_, _) => Topmost = false;
+        Grid.SetColumn(topmost, 3); footer.Children.Add(topmost);
+        status.Text = "就绪"; status.Foreground = new SolidColorBrush(Muted);
+        status.FontSize = 11; status.VerticalAlignment = VerticalAlignment.Bottom;
+        status.Margin = new Thickness(4, 0, 0, 0);
+        Grid.SetRow(footer, 5); layout.Children.Add(footer);
+        Grid.SetColumn(status, 1); footer.Children.Add(status);
+
+        SourceInitialized += (_, _) => {
+            var handle = new WindowInteropHelper(this).Handle;
+            hwndSource = HwndSource.FromHwnd(handle);
+            hwndSource?.AddHook(WndProc);
+            RegisterHotKey(handle, HotkeyTranslate, NoRepeat, VkF5);
+            RegisterHotKey(handle, HotkeyToggle, NoRepeat, VkF4);
+            ApplyBackdrop(handle);
+        };
+        Closed += (_, _) => {
             request?.Cancel();
-            UnregisterHotKey(Handle, TranslateHotkey);
-            UnregisterHotKey(Handle, ToggleHotkey);
+            var handle = new WindowInteropHelper(this).Handle;
+            UnregisterHotKey(handle, HotkeyTranslate); UnregisterHotKey(handle, HotkeyToggle);
+            hwndSource?.RemoveHook(WndProc);
         };
     }
 
-    static Button HeaderButton(string text)
+    static FrameworkElement MakeTIcon()
     {
-        return new Button {
-            Text = text, FlatStyle = FlatStyle.Flat, ForeColor = Muted,
-            BackColor = Color.FromArgb(45, 61, 78), Font = new Font("Segoe UI", 12),
-            Cursor = Cursors.Hand, TabStop = false
-        }.Also(b => {
-            b.FlatAppearance.BorderSize = 0;
-            b.FlatAppearance.MouseOverBackColor = Color.FromArgb(77, 97, 117);
-        });
+        var grid = new Grid { Width = 46, Height = 46, VerticalAlignment = VerticalAlignment.Center };
+        var tile = new Border { CornerRadius = new CornerRadius(11),
+            Background = new LinearGradientBrush(Color.FromRgb(87, 177, 246), Color.FromRgb(32, 99, 184), 45),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, 220, 240, 255)), BorderThickness = new Thickness(1),
+            Effect = new DropShadowEffect { BlurRadius = 9, ShadowDepth = 2, Opacity = .28, Color = Color.FromRgb(24, 111, 207) } };
+        var t = new TextBlock { Text = "T", FontFamily = new FontFamily("Segoe UI"), FontSize = 32,
+            FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, Effect = new DropShadowEffect { BlurRadius = 2, ShadowDepth = 1, Opacity = .3 } };
+        tile.Child = t; grid.Children.Add(tile); return grid;
     }
 
-    static Label SectionLabel(string text) => new() {
-        Text = text, AutoSize = true, ForeColor = Color.FromArgb(207, 221, 236),
-        Font = new Font("Microsoft YaHei UI", 9.5f, FontStyle.Bold)
-    };
+    static Button HeaderButton(string text) => new() { Content = text, Width = 34, Height = 36,
+        Margin = new Thickness(4, 0, 0, 0), Background = new SolidColorBrush(Color.FromArgb(65, 230, 240, 250)),
+        Foreground = Brushes.White, BorderThickness = new Thickness(0), FontSize = 18, Cursor = Cursors.Hand };
 
-    static void StyleTextBox(TextBox box, Color background)
+    static TextBlock SectionTitle(string text) => new() { Text = text, FontSize = 16,
+        FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(White),
+        VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
+
+    static void StyleEditor(TextBox box, string hint, bool readOnly)
     {
-        box.BackColor = background;
-        box.ForeColor = Ink;
-        box.BorderStyle = BorderStyle.FixedSingle;
+        box.AcceptsReturn = true; box.AcceptsTab = true; box.TextWrapping = TextWrapping.Wrap;
+        box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        box.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        box.FontSize = 16; box.Padding = new Thickness(14, 12, 14, 12);
+        box.Foreground = new SolidColorBrush(White); box.Background = readOnly ? ResultBrush : FieldBrush;
+        box.BorderBrush = readOnly ? new SolidColorBrush(Color.FromArgb(175, 84, 159, 221))
+            : new SolidColorBrush(Color.FromArgb(70, 217, 230, 243));
+        box.BorderThickness = new Thickness(1); box.IsReadOnly = readOnly;
+        box.TextChanged += (_, _) => { };
+        box.ToolTip = hint;
+        box.CaretBrush = Brushes.White;
     }
 
-    void ApplyDwmBackdrop()
+    static void ApplyBackdrop(IntPtr handle)
     {
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) return;
-        SetDwm(DwmwaUseImmersiveDarkMode, 1);
-        SetDwm(DwmwaWindowCornerPreference, 2);
-        SetDwm(DwmwaSystemBackdropType, 3);
-        SetDwm(DwmwaBorderColor, unchecked((int)0x00A7B8C7));
+        int dark = 1, corner = 2, backdrop = 3;
+        DwmSetWindowAttribute(handle, DwmwaUseImmersiveDarkMode, ref dark, sizeof(int));
+        DwmSetWindowAttribute(handle, DwmwaCornerPreference, ref corner, sizeof(int));
+        DwmSetWindowAttribute(handle, DwmwaSystemBackdropType, ref backdrop, sizeof(int));
     }
 
-    void SetDwm(int attribute, int value)
+    IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        _ = DwmSetWindowAttribute(Handle, attribute, ref value, sizeof(int));
-    }
-
-    void ApplyRoundedRegion()
-    {
-        if (Width < 2 || Height < 2) return;
-        using var path = new GraphicsPath();
-        int d = 18;
-        path.AddArc(0, 0, d, d, 180, 90);
-        path.AddArc(Width - d - 1, 0, d, d, 270, 90);
-        path.AddArc(Width - d - 1, Height - d - 1, d, d, 0, 90);
-        path.AddArc(0, Height - d - 1, d, d, 90, 90);
-        path.CloseFigure();
-        Region = new Region(path);
-    }
-
-    void DragWindow(object? sender, MouseEventArgs e)
-    {
-        if (e.Button != MouseButtons.Left) return;
-        ReleaseCapture();
-        SendMessage(Handle, WmNclButtonDown, (IntPtr)HtCaption, IntPtr.Zero);
-    }
-
-    protected override void OnHandleCreated(EventArgs e)
-    {
-        base.OnHandleCreated(e);
-        RegisterHotKey(Handle, TranslateHotkey, NoRepeat, F5);
-        RegisterHotKey(Handle, ToggleHotkey, NoRepeat, F4);
-    }
-
-    protected override void WndProc(ref Message message)
-    {
-        if (message.Msg == WmNcHitTest && WindowState == FormWindowState.Normal)
+        if (msg == WmHotkey)
         {
-            base.WndProc(ref message);
-            Point p = PointToClient(Cursor.Position);
-            const int grip = 9;
-            bool left = p.X <= grip, right = p.X >= ClientSize.Width - grip;
-            bool top = p.Y <= grip, bottom = p.Y >= ClientSize.Height - grip;
-            if (top && left) message.Result = (IntPtr)HtTopLeft;
-            else if (top && right) message.Result = (IntPtr)HtTopRight;
-            else if (bottom && left) message.Result = (IntPtr)HtBottomLeft;
-            else if (bottom && right) message.Result = (IntPtr)HtBottomRight;
-            else if (left) message.Result = (IntPtr)HtLeft;
-            else if (right) message.Result = (IntPtr)HtRight;
-            else if (top) message.Result = (IntPtr)HtTop;
-            else if (bottom) message.Result = (IntPtr)HtBottom;
-            return;
-        }
-        if (message.Msg == HotkeyMessage)
-        {
-            if (message.WParam.ToInt32() == TranslateHotkey) _ = TranslateAsync();
-            if (message.WParam.ToInt32() == ToggleHotkey)
+            if (wParam.ToInt32() == HotkeyTranslate) _ = TranslateAsync();
+            if (wParam.ToInt32() == HotkeyToggle)
             {
-                if (Visible) Hide();
-                else {
-                    Show();
-                    WindowState = FormWindowState.Normal;
-                    BringToFront();
-                    Activate();
-                }
+                if (IsVisible) Hide();
+                else { Show(); WindowState = WindowState.Normal; Activate(); }
             }
         }
-        base.WndProc(ref message);
+        return IntPtr.Zero;
     }
 
     async Task TranslateAsync()
     {
-        var input = original.Text.Trim();
-        if (input.Length == 0) {
-            status.Text = "请先粘贴需要翻译的文字。";
-            return;
-        }
-        if (input.Length > 5000) {
-            status.Text = "文本超过 5000 字符；公共翻译服务有每日额度限制。";
-            return;
-        }
-
+        string input = source.Text.Trim();
+        if (input.Length == 0) { status.Text = "请先输入需要翻译的文字。"; return; }
+        if (input.Length > 5000) { status.Text = "文本超过 5000 字符，请分段翻译。"; return; }
         request?.Cancel();
-        var currentRequest = new CancellationTokenSource();
-        request = currentRequest;
-        var token = currentRequest.Token;
-        translate.Enabled = false;
-        status.Text = "正在翻译…";
-        var pair = target.SelectedIndex == 1 ? "zh-CN|en" : "en|zh-CN";
-
-        try {
-            var chunks = SplitIntoChunks(input, 450);
-            var translatedParts = new List<string>(chunks.Count);
-            for (int i = 0; i < chunks.Count; i++) {
-                token.ThrowIfCancellationRequested();
-                status.Text = chunks.Count > 1
-                    ? $"正在翻译…（{i + 1}/{chunks.Count}）"
-                    : "正在翻译…";
-                translatedParts.Add(await TranslateChunkAsync(chunks[i], pair, token));
+        var current = new CancellationTokenSource(); request = current;
+        translateButton.IsEnabled = false; status.Text = "正在翻译…";
+        string pair = direction.SelectedIndex == 1 ? "zh-CN|en" : "en|zh-CN";
+        try
+        {
+            var pieces = Split(input, 450); var output = new List<string>();
+            for (int i = 0; i < pieces.Count; i++)
+            {
+                current.Token.ThrowIfCancellationRequested();
+                status.Text = pieces.Count > 1 ? $"正在翻译… ({i + 1}/{pieces.Count})" : "正在翻译…";
+                output.Add(await TranslateChunk(pieces[i], pair, current.Token));
             }
-
-            token.ThrowIfCancellationRequested();
-            if (IsDisposed || Disposing) return;
-            result.Text = string.Join(" ", translatedParts);
-            status.Text = "翻译完成。";
+            translated.Text = string.Join(" ", output); status.Text = "翻译完成";
         }
         catch (OperationCanceledException) { }
-        catch (Exception error) {
-            if (!IsDisposed && !Disposing && !token.IsCancellationRequested)
-                status.Text = "翻译失败：" + error.Message;
-        }
-        finally {
-            currentRequest.Dispose();
-            if (ReferenceEquals(request, currentRequest)) {
-                request = null;
-                if (!IsDisposed && !Disposing) translate.Enabled = true;
-            }
+        catch (Exception ex) { if (!current.IsCancellationRequested) status.Text = "翻译失败：" + ex.Message; }
+        finally
+        {
+            current.Dispose();
+            if (ReferenceEquals(request, current)) { request = null; translateButton.IsEnabled = true; }
         }
     }
 
-    static List<string> SplitIntoChunks(string text, int maxLength)
+    static List<string> Split(string text, int limit)
     {
-        var chunks = new List<string>();
-        int start = 0;
-        while (start < text.Length) {
-            int end = Math.Min(start + maxLength, text.Length);
-            if (end < text.Length) {
-                int split = text.LastIndexOfAny(new[] { ' ', '\t', '\r', '\n' }, end - 1, end - start);
-                if (split > start + maxLength / 2) end = split + 1;
-                if (end > start && end < text.Length &&
-                    char.IsHighSurrogate(text[end - 1]) && char.IsLowSurrogate(text[end]))
-                    end--;
-            }
-            chunks.Add(text.Substring(start, end - start).Trim());
-            start = end;
+        var parts = new List<string>(); int start = 0;
+        while (start < text.Length)
+        {
+            int end = Math.Min(start + limit, text.Length);
+            if (end < text.Length) { int p = text.LastIndexOfAny(new[] { ' ', '\\t', '\\r', '\\n' }, end - 1, end - start); if (p > start + limit / 2) end = p + 1; }
+            parts.Add(text[start..end].Trim()); start = end;
             while (start < text.Length && char.IsWhiteSpace(text[start])) start++;
         }
-        return chunks.Where(chunk => chunk.Length > 0).ToList();
+        return parts.Where(x => x.Length > 0).ToList();
     }
 
-    static async Task<string> TranslateChunkAsync(string input, string pair, CancellationToken token)
+    static async Task<string> TranslateChunk(string text, string pair, CancellationToken token)
     {
-        var url = "https://api.mymemory.translated.net/get?q=" +
-                  Uri.EscapeDataString(input) + "&langpair=" + pair;
-        using var response = await Client.GetAsync(url, token);
-        response.EnsureSuccessStatusCode();
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
-        var root = json.RootElement;
-        if (root.TryGetProperty("responseStatus", out var apiStatus) &&
-            apiStatus.ValueKind == JsonValueKind.Number && apiStatus.GetInt32() != 200)
-            throw new InvalidOperationException(
-                root.TryGetProperty("responseDetails", out var detail)
-                    ? detail.GetString() ?? "翻译服务返回错误" : "翻译服务返回错误");
-
-        var translated = WebUtility.HtmlDecode(
-            root.GetProperty("responseData").GetProperty("translatedText").GetString() ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(translated))
-            throw new InvalidOperationException("翻译服务没有返回有效译文。");
-        return translated;
-    }
-}
-
-static class ControlExtensions
-{
-    public static T Also<T>(this T value, Action<T> action)
-    {
-        action(value);
+        string url = "https://api.mymemory.translated.net/get?q=" + Uri.EscapeDataString(text) + "&langpair=" + pair;
+        using var response = await Http.GetAsync(url, token); response.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
+        var root = doc.RootElement;
+        if (root.TryGetProperty("responseStatus", out var s) && s.ValueKind == JsonValueKind.Number && s.GetInt32() != 200)
+            throw new InvalidOperationException(root.TryGetProperty("responseDetails", out var d) ? d.GetString() ?? "翻译服务返回错误" : "翻译服务返回错误");
+        string value = WebUtility.HtmlDecode(root.GetProperty("responseData").GetProperty("translatedText").GetString() ?? "").Trim();
+        if (value.Length == 0) throw new InvalidOperationException("翻译服务没有返回有效译文。");
         return value;
     }
 }
