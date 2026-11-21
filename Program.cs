@@ -518,11 +518,19 @@ sealed class TranslatorWindow : Window
 
         var selected = new FrameworkElementFactory(typeof(ContentPresenter));
         selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
-        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
         selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        selected.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
-        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(12, 0, 12, 0));
+        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 0, 8, 0));
         selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
+        // Render the selected label in a full-width TextBlock so text alignment
+        // is centered independently of the content's natural (left-aligned) size.
+        var selectedText = new FrameworkElementFactory(typeof(TextBlock));
+        selectedText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding());
+        selectedText.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
+        selectedText.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+        selectedText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        selectedText.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+        selected.SetValue(ContentPresenter.ContentTemplateProperty, new DataTemplate { VisualTree = selectedText });
         grid.AppendChild(selected);
 
         var popup = new FrameworkElementFactory(typeof(Popup));
@@ -570,7 +578,7 @@ sealed class TranslatorWindow : Window
         border.SetValue(Border.RenderTransformProperty, new ScaleTransform(1, 1));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         var content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
         content.SetValue(UIElement.IsHitTestVisibleProperty, false);
         border.AppendChild(content);
