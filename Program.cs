@@ -216,17 +216,22 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 42; translateButton.Margin = new Thickness(0,0,12,0);
-        translateButton.Background = Accent; translateButton.Foreground = Brushes.White;
+        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 46; translateButton.Margin = new Thickness(0,0,10,0);
+        translateButton.Background = new LinearGradientBrush(Color.FromArgb(220, 83, 142, 220), Color.FromArgb(220, 112, 105, 190), 0);
+        translateButton.Foreground = Brushes.White;
         translateButton.BorderBrush = GlassBorder;
-        translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 15; translateButton.FontWeight = FontWeights.Bold;
+        translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 14; translateButton.FontWeight = FontWeights.SemiBold;
         translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
         translateButton.Template = PillTemplate();
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
 
-        var hide = PillButton("隐藏窗口 · F4"); hideButton = hide; hide.Margin = new Thickness(5,0,5,0);
+        var hide = PillButton("隐藏窗口 · F4"); hideButton = hide; hide.Height = 46; hide.Margin = new Thickness(5,0,5,0);
+        hide.Background = new LinearGradientBrush(Color.FromArgb(170, 112, 128, 145), Color.FromArgb(170, 76, 91, 108), 0);
+        hide.BorderBrush = new SolidColorBrush(Color.FromArgb(145, 210, 225, 240));
         hide.Click += (_, _) => Hide(); Grid.SetColumn(hide,1); footer.Children.Add(hide);
-        var pin = PillButton("置顶"); pinButton = pin; pin.Margin = new Thickness(12,0,0,0);
+        var pin = PillButton("置顶"); pinButton = pin; pin.Height = 46; pin.Margin = new Thickness(10,0,0,0);
+        pin.Background = new LinearGradientBrush(Color.FromArgb(180, 65, 151, 157), Color.FromArgb(180, 64, 112, 145), 0);
+        pin.BorderBrush = new SolidColorBrush(Color.FromArgb(155, 205, 235, 240));
         topmost.Content = pin.Content; topmost.IsChecked = true; topmost.Foreground = WhiteBrush;
         topmost.VerticalAlignment = VerticalAlignment.Center; topmost.HorizontalAlignment = HorizontalAlignment.Stretch;
         topmost.Checked += (_, _) => Topmost = true; topmost.Unchecked += (_, _) => Topmost = false;
@@ -598,10 +603,15 @@ sealed class TranslatorWindow : Window
     {
         var border = new FrameworkElementFactory(typeof(Border));
         border.Name = "surface";
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(40));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(16));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        border.SetValue(Border.PaddingProperty, new Thickness(12, 0, 12, 0));
+        border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+        border.SetValue(Border.EffectProperty, new System.Windows.Media.Effects.DropShadowEffect {
+            BlurRadius = 12, ShadowDepth = 2, Opacity = 0.18, Color = Colors.Black
+        });
         border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
         border.SetValue(UIElement.RenderTransformProperty, new ScaleTransform(1, 1));
         var cp = new FrameworkElementFactory(typeof(ContentPresenter));
