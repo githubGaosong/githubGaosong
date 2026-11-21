@@ -49,12 +49,12 @@ sealed class TranslatorWindow : Window
     static readonly Brush Glass = new LinearGradientBrush(Color.FromArgb(222, 38, 61, 84), Color.FromArgb(207, 19, 39, 59), 90);
     static readonly Brush FieldBrush = new SolidColorBrush(Color.FromArgb(58, 8, 22, 38));
     static readonly Brush ResultBrush = new SolidColorBrush(Color.FromArgb(72, 44, 103, 145));
-    static readonly Brush Blue = new SolidColorBrush(Color.FromRgb(74, 164, 246));
+    static readonly Brush PaleBlue = new LinearGradientBrush(Color.FromRgb(190, 225, 250), Color.FromRgb(139, 194, 235), 90);
 
     public TranslatorWindow()
     {
         Title = "Tanslator";
-        Width = 640; Height = 520; MinWidth = 520; MinHeight = 440;
+        Width = 700; Height = 590; MinWidth = 560; MinHeight = 470;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.CanResize;
@@ -83,19 +83,14 @@ sealed class TranslatorWindow : Window
         Content = outer;
 
         var header = new Grid { Margin = new Thickness(0, 0, 0, 10) };
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var icon = MakeTIcon();
-        icon.Margin = new Thickness(0, 0, 13, 0);
-        icon.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } } ;
-        header.Children.Add(icon);
         var title = new TextBlock { Text = "Tanslator", FontSize = 25, FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(White), VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.SizeAll };
         title.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } };
-        Grid.SetColumn(title, 1); header.Children.Add(title);
+        Grid.SetColumn(title, 0); header.Children.Add(title);
 
         direction.Items.Add("英文  →  简体中文");
         direction.Items.Add("简体中文  →  英文");
@@ -105,11 +100,11 @@ sealed class TranslatorWindow : Window
         direction.Background = new SolidColorBrush(Color.FromArgb(110, 30, 49, 69));
         direction.Foreground = Brushes.White;
         direction.BorderBrush = new SolidColorBrush(Color.FromArgb(90, 218, 231, 244));
-        Grid.SetColumn(direction, 2); header.Children.Add(direction);
+        Grid.SetColumn(direction, 1); header.Children.Add(direction);
         var minimize = HeaderButton("—"); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
-        Grid.SetColumn(minimize, 3); header.Children.Add(minimize);
+        Grid.SetColumn(minimize, 2); header.Children.Add(minimize);
         var close = HeaderButton("×"); close.Click += (_, _) => Close();
-        Grid.SetColumn(close, 4); header.Children.Add(close);
+        Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
         var sourceLabel = SectionTitle("原文");
@@ -140,7 +135,7 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         translateButton.Content = "翻译  ·  F5";
         translateButton.Width = 144; translateButton.Height = 44;
-        translateButton.Background = Blue; translateButton.Foreground = Brushes.White;
+        translateButton.Background = PaleBlue; translateButton.Foreground = Brushes.White;
         translateButton.BorderThickness = new Thickness(0); translateButton.FontWeight = FontWeights.SemiBold;
         translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
         Grid.SetColumn(translateButton, 0); footer.Children.Add(translateButton);
@@ -171,19 +166,6 @@ sealed class TranslatorWindow : Window
             UnregisterHotKey(handle, HotkeyTranslate); UnregisterHotKey(handle, HotkeyToggle);
             hwndSource?.RemoveHook(WndProc);
         };
-    }
-
-    static FrameworkElement MakeTIcon()
-    {
-        var grid = new Grid { Width = 46, Height = 46, VerticalAlignment = VerticalAlignment.Center };
-        var tile = new Border { CornerRadius = new CornerRadius(11),
-            Background = new LinearGradientBrush(Color.FromRgb(87, 177, 246), Color.FromRgb(32, 99, 184), 45),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(150, 220, 240, 255)), BorderThickness = new Thickness(1),
-            Effect = new DropShadowEffect { BlurRadius = 9, ShadowDepth = 2, Opacity = .28, Color = Color.FromRgb(24, 111, 207) } };
-        var t = new TextBlock { Text = "T", FontFamily = new FontFamily("Segoe UI"), FontSize = 32,
-            FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center, Effect = new DropShadowEffect { BlurRadius = 2, ShadowDepth = 1, Opacity = .3 } };
-        tile.Child = t; grid.Children.Add(tile); return grid;
     }
 
     static Button HeaderButton(string text) => new() { Content = text, Width = 34, Height = 36,
