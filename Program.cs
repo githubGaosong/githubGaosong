@@ -40,6 +40,8 @@ sealed class TranslatorWindow : Window
     readonly TextBox translated = new();
     readonly ComboBox sourceLang = new();
     readonly ComboBox targetLang = new();
+    readonly ComboBox backgroundChoice = new();
+    Grid? backdropLayer;
     readonly TextBlock charCount = new();
     readonly TextBlock status = new();
     readonly Button translateButton = new();
@@ -92,14 +94,18 @@ sealed class TranslatorWindow : Window
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new TextBlock { Text = "Translate", FontSize = 18, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.SizeAll };
         title.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } };
         header.Children.Add(title);
+        SetupBackgroundSelector();
+        backgroundChoice.Margin = new Thickness(0, 0, 8, 0);
+        Grid.SetColumn(backgroundChoice, 1); header.Children.Add(backgroundChoice);
         var minimize = HeaderButton("—", 40); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
-        Grid.SetColumn(minimize, 1); header.Children.Add(minimize);
+        Grid.SetColumn(minimize, 2); header.Children.Add(minimize);
         var close = HeaderButton("×", 40); close.Click += (_, _) => Close();
-        Grid.SetColumn(close, 2); header.Children.Add(close);
+        Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
         var languageRow = new Grid { Margin = new Thickness(0, 4, 0, 12) };
@@ -219,8 +225,57 @@ sealed class TranslatorWindow : Window
 
     UIElement CreateBackdrop()
     {
-        // Colorless transparent window background: desktop remains visible through the glass UI.
-        return new Grid { Background = new SolidColorBrush(Color.FromArgb(58, 10, 17, 29)), IsHitTestVisible = false };
+        backdropLayer = new Grid { IsHitTestVisible = false };
+        ApplyBackground("彩虹渐变");
+        return backdropLayer;
+    }
+
+    void SetupBackgroundSelector()
+    {
+        backgroundChoice.Items.Add("背景 · 彩虹渐变");
+        backgroundChoice.Items.Add("深海蓝");
+        backgroundChoice.Items.Add("极光紫");
+        backgroundChoice.Items.Add("樱花粉");
+        backgroundChoice.Items.Add("薄荷绿");
+        backgroundChoice.Items.Add("暖阳橙");
+        backgroundChoice.Items.Add("石墨黑");
+        backgroundChoice.SelectedIndex = 0;
+        backgroundChoice.Width = 112;
+        backgroundChoice.Height = 30;
+        backgroundChoice.FontSize = 11;
+        backgroundChoice.Foreground = Brushes.White;
+        backgroundChoice.Background = new SolidColorBrush(Color.FromArgb(52, 255, 255, 255));
+        backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 235, 245, 255));
+        backgroundChoice.BorderThickness = new Thickness(1);
+        backgroundChoice.Padding = new Thickness(5, 0, 5, 0);
+        backgroundChoice.VerticalContentAlignment = VerticalAlignment.Center;
+        backgroundChoice.ToolTip = "选择窗口背景颜色";
+        backgroundChoice.SelectionChanged += (_, _) =>
+        {
+            string choice = backgroundChoice.SelectedIndex == 0 ? "彩虹渐变" : backgroundChoice.SelectedItem?.ToString() ?? "彩虹渐变";
+            ApplyBackground(choice);
+        };
+    }
+
+    void ApplyBackground(string choice)
+    {
+        if (backdropLayer == null) return;
+        Brush brush = choice switch
+        {
+            "深海蓝" => new LinearGradientBrush(Color.FromArgb(235, 8, 35, 75), Color.FromArgb(235, 20, 105, 145), 35),
+            "极光紫" => new LinearGradientBrush(Color.FromArgb(235, 45, 25, 90), Color.FromArgb(235, 135, 65, 155), 35),
+            "樱花粉" => new LinearGradientBrush(Color.FromArgb(235, 100, 38, 72), Color.FromArgb(235, 220, 125, 165), 35),
+            "薄荷绿" => new LinearGradientBrush(Color.FromArgb(235, 15, 70, 65), Color.FromArgb(235, 65, 155, 125), 35),
+            "暖阳橙" => new LinearGradientBrush(Color.FromArgb(235, 100, 45, 18), Color.FromArgb(235, 220, 135, 55), 35),
+            "石墨黑" => new LinearGradientBrush(Color.FromArgb(242, 18, 21, 29), Color.FromArgb(242, 58, 65, 78), 35),
+            _ => new LinearGradientBrush(new GradientStopCollection {
+                new GradientStop(Color.FromArgb(235, 30, 65, 125), 0.0),
+                new GradientStop(Color.FromArgb(235, 115, 55, 145), 0.34),
+                new GradientStop(Color.FromArgb(235, 35, 130, 145), 0.68),
+                new GradientStop(Color.FromArgb(235, 180, 90, 120), 1.0)
+            }, 35)
+        };
+        backdropLayer.Background = brush;
     }
 
     static readonly (string Name, string Code)[] Languages =
@@ -305,17 +360,6 @@ sealed class TranslatorWindow : Window
         selected.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 0, 22, 0));
         selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
         grid.AppendChild(selected);
-
-        var arrow = new FrameworkElementFactory(typeof(TextBlock));
-        arrow.SetValue(TextBlock.TextProperty, "⌄");
-        arrow.SetValue(TextBlock.FontSizeProperty, 17.0);
-        arrow.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
-        arrow.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromArgb(225, 245, 249, 255)));
-        arrow.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-        arrow.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        arrow.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 11, 3));
-        arrow.SetValue(UIElement.IsHitTestVisibleProperty, false);
-        grid.AppendChild(arrow);
 
         var popup = new FrameworkElementFactory(typeof(Popup));
         popup.Name = "PART_Popup";
