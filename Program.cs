@@ -45,6 +45,8 @@ sealed class TranslatorWindow : Window
     readonly CheckBox topmost = new();
     HwndSource? hwndSource;
     CancellationTokenSource? request;
+    Point dragStart;
+    bool dragPending;
 
     static readonly Color White = Color.FromRgb(246, 249, 253);
     static readonly Color Muted = Color.FromRgb(190, 205, 221);
@@ -85,17 +87,23 @@ sealed class TranslatorWindow : Window
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
         frame.Child = layout; root.Children.Add(frame); Content = root;
+        // Any part of the window can start a drag. A small movement threshold
+        // preserves normal button clicks; dragging starts only after the pointer moves.
         root.PreviewMouseLeftButtonDown += (_, e) =>
         {
-            if (e.ButtonState != MouseButtonState.Pressed) return;
-            DependencyObject? node = e.OriginalSource as DependencyObject;
-            while (node != null && node != root)
-            {
-                if (node is TextBoxBase or ComboBox or Button or CheckBox or ScrollBar or Slider) return;
-                node = VisualTreeHelper.GetParent(node);
-            }
-            try { DragMove(); e.Handled = true; } catch (InvalidOperationException) { }
+            dragStart = e.GetPosition(this);
+            dragPending = true;
         };
+        root.PreviewMouseMove += (_, e) =>
+        {
+            if (!dragPending || e.LeftButton != MouseButtonState.Pressed) return;
+            Point now = e.GetPosition(this);
+            if (Math.Abs(now.X - dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                Math.Abs(now.Y - dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+            dragPending = false;
+            try { DragMove(); } catch (InvalidOperationException) { }
+        };
+        root.PreviewMouseLeftButtonUp += (_, _) => dragPending = false;
 
         var header = new Grid();
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
