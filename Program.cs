@@ -57,7 +57,7 @@ sealed class TranslatorWindow : Window
     public TranslatorWindow()
     {
         Title = "Tanslator";
-        Width = 540; Height = 460; MinWidth = 320; MinHeight = 280;
+        Width = 540; Height = 460; MinWidth = 180; MinHeight = 120;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
@@ -233,7 +233,20 @@ sealed class TranslatorWindow : Window
         var cp = new FrameworkElementFactory(typeof(ContentPresenter));
         cp.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        border.AppendChild(cp); return new ControlTemplate(typeof(Button)) { VisualTree = border };
+        border.AppendChild(cp);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(68, 255, 255, 255))));
+        hover.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(150, 255, 255, 255))));
+        template.Triggers.Add(hover);
+        var pressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(115, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
+        template.Triggers.Add(pressed);
+        var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+        disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.42));
+        template.Triggers.Add(disabled);
+        return template;
     }
 
     static Button HeaderButton(string text, double size)
@@ -267,6 +280,10 @@ sealed class TranslatorWindow : Window
         var hover = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
         hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(65, 255, 255, 255))));
         template.Triggers.Add(hover);
+        var pressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(105, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
+        template.Triggers.Add(pressed);
         return template;
     }
 
@@ -316,15 +333,21 @@ sealed class TranslatorWindow : Window
         long packed = lParam.ToInt64();
         int x = unchecked((short)(packed & 0xffff));
         int y = unchecked((short)((packed >> 16) & 0xffff));
-        const int edge = 12;
+        // Larger corner zones make diagonal resizing easier to grab.
+        const int edge = 18;
+        const int corner = 30;
         bool left = x >= r.Left && x < r.Left + edge;
         bool right = x < r.Right && x >= r.Right - edge;
         bool top = y >= r.Top && y < r.Top + edge;
         bool bottom = y < r.Bottom && y >= r.Bottom - edge;
-        if (top && left) hit = HtTopLeft;
-        else if (top && right) hit = HtTopRight;
-        else if (bottom && left) hit = HtBottomLeft;
-        else if (bottom && right) hit = HtBottomRight;
+        bool nearLeft = x >= r.Left && x < r.Left + corner;
+        bool nearRight = x < r.Right && x >= r.Right - corner;
+        bool nearTop = y >= r.Top && y < r.Top + corner;
+        bool nearBottom = y < r.Bottom && y >= r.Bottom - corner;
+        if (nearTop && nearLeft) hit = HtTopLeft;
+        else if (nearTop && nearRight) hit = HtTopRight;
+        else if (nearBottom && nearLeft) hit = HtBottomLeft;
+        else if (nearBottom && nearRight) hit = HtBottomRight;
         else if (left) hit = HtLeft;
         else if (right) hit = HtRight;
         else if (top) hit = HtTop;
