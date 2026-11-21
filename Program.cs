@@ -37,6 +37,7 @@ sealed class TranslatorWindow : Window
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(25) };
     readonly TextBox source = new();
     readonly TextBox translated = new();
+    readonly ComboBox sourceLang = new();
     readonly ComboBox targetLang = new();
     readonly TextBlock charCount = new();
     readonly TextBlock status = new();
@@ -56,24 +57,24 @@ sealed class TranslatorWindow : Window
     public TranslatorWindow()
     {
         Title = "Tanslator";
-        Width = 780; Height = 660; MinWidth = 560; MinHeight = 480;
+        Width = 700; Height = 590; MinWidth = 520; MinHeight = 430;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
         Foreground = WhiteBrush; FontFamily = new FontFamily("Microsoft YaHei UI");
-        FontSize = 16; Topmost = true; ShowInTaskbar = true; UseLayoutRounding = true; SnapsToDevicePixels = true;
+        FontSize = 15; Topmost = true; ShowInTaskbar = true; UseLayoutRounding = true; SnapsToDevicePixels = true;
 
         var root = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
         TextOptions.SetTextFormattingMode(root, TextFormattingMode.Display);
         TextOptions.SetTextRenderingMode(root, TextRenderingMode.Grayscale);
         root.SizeChanged += (_, _) => root.Clip = new RectangleGeometry(
-            new Rect(0, 0, root.ActualWidth, root.ActualHeight), 28, 28);
+            new Rect(0, 0, root.ActualWidth, root.ActualHeight), 26, 26);
         root.Children.Add(CreateBackdrop());
         var frame = new Border {
             Background = Brushes.Transparent,
-            CornerRadius = new CornerRadius(28),
+            CornerRadius = new CornerRadius(26),
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
-            BorderThickness = new Thickness(1.5), Padding = new Thickness(20)
+            BorderThickness = new Thickness(1.5), Padding = new Thickness(18)
         };
         var layout = new Grid();
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
@@ -100,10 +101,17 @@ sealed class TranslatorWindow : Window
         var languageRow = new Grid { Margin = new Thickness(0, 4, 0, 12) };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        SetupLanguage(sourceLang, "自动检测");
         SetupLanguage(targetLang, "简体中文");
-        targetLang.Width = 250;
-        targetLang.HorizontalAlignment = HorizontalAlignment.Right;
-        Grid.SetColumn(targetLang, 1); languageRow.Children.Add(targetLang);
+        sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
+        targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
+        Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
+        var swap = new TextBlock { Text = "→", FontSize = 25, Foreground = WhiteBrush,
+            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(14, 0, 14, 0) };
+        Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
+        Grid.SetColumn(targetLang, 2); languageRow.Children.Add(targetLang);
         Grid.SetRow(languageRow, 1); layout.Children.Add(languageRow);
 
         var inputPanel = new Border { Background = GlassPanel, BorderBrush = GlassBorder,
@@ -197,13 +205,15 @@ sealed class TranslatorWindow : Window
 
     static void SetupLanguage(ComboBox box, string selected)
     {
-        box.Items.Add("英文"); box.Items.Add("简体中文"); box.SelectedItem = selected;
-        box.Width = double.NaN; box.Height = 48; box.FontSize = 17; box.FontWeight = FontWeights.SemiBold;
+        box.Items.Add("自动检测"); box.Items.Add("英文"); box.Items.Add("简体中文");
+        box.Items.Add("繁體中文"); box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
+        box.SelectedItem = selected;
+        box.Width = double.NaN; box.Height = 44; box.FontSize = 15; box.FontWeight = FontWeights.Medium;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(38,255,255,255));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(105,240,245,255));
         box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
         box.VerticalContentAlignment = VerticalAlignment.Center;
-        box.Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 2, Opacity = .18, Color = Colors.White };
+        box.Effect = null; box.SnapsToDevicePixels = true;
     }
 
     static ControlTemplate PillTemplate()
@@ -219,9 +229,39 @@ sealed class TranslatorWindow : Window
         border.AppendChild(cp); return new ControlTemplate(typeof(Button)) { VisualTree = border };
     }
 
-    static Button HeaderButton(string text, double size) => new() { Content = text, Width = size, Height = size,
-        Margin = new Thickness(8,0,0,0), Background = new SolidColorBrush(Color.FromArgb(30,255,255,255)),
-        Foreground = Brushes.White, BorderThickness = new Thickness(0), FontSize = 32, Cursor = Cursors.Hand };
+    static Button HeaderButton(string text, double size)
+    {
+        return new Button {
+            Content = text == "—" ? "−" : "×", Width = 34, Height = 34,
+            Margin = new Thickness(6, 0, 0, 0),
+            Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255)),
+            Foreground = new SolidColorBrush(Color.FromRgb(248, 250, 255)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255)),
+            BorderThickness = new Thickness(1), FontFamily = new FontFamily("Segoe UI"),
+            FontSize = text == "—" ? 17 : 16, FontWeight = FontWeights.Normal,
+            Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center, Cursor = Cursors.Hand,
+            Focusable = false, Template = HeaderButtonTemplate()
+        };
+    }
+
+    static ControlTemplate HeaderButtonTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(content);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(65, 255, 255, 255))));
+        template.Triggers.Add(hover);
+        return template;
+    }
 
     static Button IconButton(string text, double size) => new() { Content = text, Width = size, Height = size,
         Background = Brushes.Transparent, Foreground = Brushes.White, BorderThickness = new Thickness(0),
@@ -297,7 +337,7 @@ sealed class TranslatorWindow : Window
         request?.Cancel();
         var current = new CancellationTokenSource(); request = current;
         translateButton.IsEnabled = false; status.Text = "正在翻译…";
-        string pair = "autodetect|zh-CN";
+        string pair = $"{LanguageCode(sourceLang.SelectedItem?.ToString(), true)}|{LanguageCode(targetLang.SelectedItem?.ToString(), false)}";
         try
         {
             var pieces = Split(input, 450); var output = new List<string>();
@@ -316,6 +356,22 @@ sealed class TranslatorWindow : Window
             current.Dispose();
             if (ReferenceEquals(request, current)) { request = null; translateButton.IsEnabled = true; }
         }
+    }
+
+    static string LanguageCode(string? name, bool source)
+    {
+        return name switch
+        {
+            "自动检测" => "autodetect",
+            "英文" => "en",
+            "简体中文" => "zh-CN",
+            "繁體中文" => "zh-TW",
+            "日文" => "ja",
+            "韩文" => "ko",
+            "法文" => "fr",
+            "德文" => "de",
+            _ => source ? "autodetect" : "zh-CN"
+        };
     }
 
     static List<string> Split(string text, int limit)
