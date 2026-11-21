@@ -516,7 +516,6 @@ sealed class TranslatorWindow : Window
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(14));
         popupBorder.SetValue(Border.PaddingProperty, new Thickness(5));
         popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 6, 0, 0));
-        popupBorder.Effect = new DropShadowEffect { BlurRadius = 16, ShadowDepth = 4, Opacity = 0.28, Color = Colors.Black };
         var popupScroll = new FrameworkElementFactory(typeof(ScrollViewer));
         popupScroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
         popupScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
