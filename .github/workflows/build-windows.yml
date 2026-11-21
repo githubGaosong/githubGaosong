@@ -1,4 +1,4 @@
-name: Build Windows EXE
+name: Build Translator for Windows
 
 on:
   workflow_dispatch:
@@ -13,11 +13,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish single-file EXE
-        run: dotnet publish GameTranslator.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-      - name: Upload EXE
+      - name: Publish compact self-contained EXE
+        run: dotnet publish Translator.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
+      - name: Upload Translator
         uses: actions/upload-artifact@v4
         with:
-          name: GameTranslator-Windows-x64
-          path: bin/Release/net8.0-windows/win-x64/publish/GameTranslator.exe
+          name: Translator-Windows-x64
+          path: bin/Release/net8.0-windows/win-x64/publish/Translator.exe
           if-no-files-found: error
