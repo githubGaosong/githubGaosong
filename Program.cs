@@ -69,7 +69,7 @@ sealed class MainWindow : Form
 
     public MainWindow()
     {
-        Text = "GameTranslator";
+        Text = "Translator Little Tool";
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(680, 590);
         MinimumSize = new Size(500, 460);
@@ -79,7 +79,7 @@ sealed class MainWindow : Form
         Font = new Font("Microsoft YaHei UI", 10F);
         Padding = new Padding(18);
 
-        var header = new Label { Text = "GAME TRANSLATOR", Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Bold), ForeColor = TextColor, AutoSize = true };
+        var header = new Label { Text = "TRANSLATOR LITTLE TOOL", Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Bold), ForeColor = TextColor, AutoSize = true };
         header.SetBounds(18, 14, 260, 30);
 
         var languageLabel = new Label { Text = "目标语言", AutoSize = true, ForeColor = Muted };
