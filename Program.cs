@@ -269,7 +269,7 @@ sealed class TranslatorWindow : Window
         while (start < text.Length)
         {
             int end = Math.Min(start + limit, text.Length);
-            if (end < text.Length) { int p = text.LastIndexOfAny(new[] { ' ', '\\t', '\\r', '\\n' }, end - 1, end - start); if (p > start + limit / 2) end = p + 1; }
+            if (end < text.Length) { int p = text.LastIndexOfAny(new char[] { ' ', (char)9, (char)13, (char)10 }, end - 1, end - start); if (p > start + limit / 2) end = p + 1; }
             parts.Add(text[start..end].Trim()); start = end;
             while (start < text.Length && char.IsWhiteSpace(text[start])) start++;
         }
