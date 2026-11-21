@@ -52,21 +52,23 @@ sealed class TranslatorWindow : Window
     static readonly Brush MutedBrush = new SolidColorBrush(Color.FromArgb(220, 238, 239, 255));
     static readonly Brush GlassPanel = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
     static readonly Brush GlassBorder = new SolidColorBrush(Color.FromArgb(90, 238, 245, 255));
-    static readonly Brush Accent = new LinearGradientBrush(Color.FromRgb(38, 190, 255), Color.FromRgb(0, 91, 255), 90);
+    static readonly Brush Accent = new SolidColorBrush(Color.FromArgb(34, 255, 255, 255));
 
     public TranslatorWindow()
     {
         Title = "Tanslator";
-        Width = 700; Height = 590; MinWidth = 440; MinHeight = 360;
+        Width = 540; Height = 460; MinWidth = 320; MinHeight = 280;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
         Foreground = WhiteBrush; FontFamily = new FontFamily("Microsoft YaHei UI");
         FontSize = 15; Topmost = true; ShowInTaskbar = true; UseLayoutRounding = true; SnapsToDevicePixels = true;
+        TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+        TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
 
         var root = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
         TextOptions.SetTextFormattingMode(root, TextFormattingMode.Display);
-        TextOptions.SetTextRenderingMode(root, TextRenderingMode.Grayscale);
+        TextOptions.SetTextRenderingMode(root, TextRenderingMode.Auto);
         root.SizeChanged += (_, _) => root.Clip = new RectangleGeometry(
             new Rect(0, 0, root.ActualWidth, root.ActualHeight), 26, 26);
         root.Children.Add(CreateBackdrop());
@@ -74,15 +76,26 @@ sealed class TranslatorWindow : Window
             Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(26),
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
-            BorderThickness = new Thickness(1.5), Padding = new Thickness(18)
+            BorderThickness = new Thickness(1.5), Padding = new Thickness(10)
         };
         var layout = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
         frame.Child = layout; root.Children.Add(frame); Content = root;
+        root.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            if (e.ButtonState != MouseButtonState.Pressed) return;
+            DependencyObject? node = e.OriginalSource as DependencyObject;
+            while (node != null && node != root)
+            {
+                if (node is TextBoxBase or ComboBox or Button or CheckBox or ScrollBar or Slider) return;
+                node = VisualTreeHelper.GetParent(node);
+            }
+            try { DragMove(); e.Handled = true; } catch (InvalidOperationException) { }
+        };
 
         var header = new Grid();
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -122,15 +135,12 @@ sealed class TranslatorWindow : Window
         inputGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var inputArea = new Grid();
         StyleEditor(source, false);
-        source.FontSize = 17; source.Padding = new Thickness(0); source.Background = Brushes.Transparent;
+        source.FontSize = 16; source.FontWeight = FontWeights.Medium; source.Padding = new Thickness(0); source.Background = Brushes.Transparent;
         source.BorderThickness = new Thickness(0);
-        var inputHint = new TextBlock { Text = "请输入要翻译的内容...", FontSize = 18, Foreground = new SolidColorBrush(Color.FromArgb(190,255,255,255)),
+        var inputHint = new TextBlock { Text = "请输入要翻译的内容...", FontSize = 16, Foreground = new SolidColorBrush(Color.FromArgb(190,255,255,255)),
             IsHitTestVisible = false, Margin = new Thickness(2,2,48,0), VerticalAlignment = VerticalAlignment.Top };
         source.TextChanged += (_, _) => { inputHint.Visibility = string.IsNullOrEmpty(source.Text) ? Visibility.Visible : Visibility.Collapsed; charCount.Text = $"{source.Text.Length} / 5000"; };
         inputArea.Children.Add(source); inputArea.Children.Add(inputHint);
-        var copyInput = IconButton("▢", 38); copyInput.HorizontalAlignment = HorizontalAlignment.Right; copyInput.VerticalAlignment = VerticalAlignment.Top;
-        copyInput.Click += (_, _) => CopyText(source.Text);
-        inputArea.Children.Add(copyInput);
         inputGrid.Children.Add(inputArea);
         charCount.Text = "0 / 5000"; charCount.FontSize = 14; charCount.Foreground = MutedBrush;
         charCount.HorizontalAlignment = HorizontalAlignment.Right; charCount.Margin = new Thickness(0,8,2,0);
@@ -148,14 +158,11 @@ sealed class TranslatorWindow : Window
         var outputLabel = new TextBlock { Text = "译文", FontSize = 19, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center };
         outputHeader.Children.Add(outputLabel);
-        var copyOutput = IconButton("▢", 38); copyOutput.HorizontalAlignment = HorizontalAlignment.Right;
-        copyOutput.VerticalAlignment = VerticalAlignment.Center; copyOutput.Click += (_, _) => CopyText(translated.Text);
-        outputHeader.Children.Add(copyOutput);
         outputGrid.Children.Add(outputHeader);
         var outputDivider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(55,255,255,255)),
             VerticalAlignment = VerticalAlignment.Bottom };
         outputHeader.Children.Add(outputDivider);
-        StyleEditor(translated, true); translated.FontSize = 17; translated.Padding = new Thickness(28,22,28,18);
+        StyleEditor(translated, true); translated.FontSize = 16; translated.FontWeight = FontWeights.Medium; translated.Padding = new Thickness(16,12,16,12);
         translated.Background = Brushes.Transparent; translated.BorderThickness = new Thickness(0);
         translated.ToolTip = "翻译结果将显示在这里...";
         Grid.SetRow(translated,1); outputGrid.Children.Add(translated);
@@ -166,17 +173,17 @@ sealed class TranslatorWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 56; translateButton.Margin = new Thickness(0,0,20,0);
+        translateButton.Content = "翻译  ·  F5"; translateButton.Height = 44; translateButton.Margin = new Thickness(0,0,20,0);
         translateButton.Background = Accent; translateButton.Foreground = Brushes.White;
-        translateButton.BorderBrush = new SolidColorBrush(Color.FromArgb(170,100,225,255));
+        translateButton.BorderBrush = GlassBorder;
         translateButton.BorderThickness = new Thickness(1.2); translateButton.FontSize = 18; translateButton.FontWeight = FontWeights.Bold;
         translateButton.Cursor = Cursors.Hand; translateButton.Click += async (_, _) => await TranslateAsync();
         translateButton.Template = PillTemplate();
         Grid.SetColumn(translateButton,0); footer.Children.Add(translateButton);
 
-        var hide = PillButton("◉  隐藏窗口 · F4"); hide.Margin = new Thickness(8,0,8,0);
+        var hide = PillButton("隐藏窗口 · F4"); hide.Margin = new Thickness(8,0,8,0);
         hide.Click += (_, _) => Hide(); Grid.SetColumn(hide,1); footer.Children.Add(hide);
-        var pin = PillButton("◆  置顶"); pin.Margin = new Thickness(20,0,0,0);
+        var pin = PillButton("置顶"); pin.Margin = new Thickness(20,0,0,0);
         topmost.Content = pin.Content; topmost.IsChecked = true; topmost.Foreground = WhiteBrush;
         topmost.VerticalAlignment = VerticalAlignment.Center; topmost.HorizontalAlignment = HorizontalAlignment.Stretch;
         topmost.Checked += (_, _) => Topmost = true; topmost.Unchecked += (_, _) => Topmost = false;
@@ -208,7 +215,7 @@ sealed class TranslatorWindow : Window
         box.Items.Add("自动检测"); box.Items.Add("英文"); box.Items.Add("简体中文");
         box.Items.Add("繁體中文"); box.Items.Add("日文"); box.Items.Add("韩文"); box.Items.Add("法文"); box.Items.Add("德文");
         box.SelectedItem = selected;
-        box.Width = double.NaN; box.Height = 44; box.FontSize = 15; box.FontWeight = FontWeights.Medium;
+        box.Width = double.NaN; box.Height = 36; box.FontSize = 14; box.FontWeight = FontWeights.Medium;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(38,255,255,255));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(105,240,245,255));
         box.BorderThickness = new Thickness(1.5); box.HorizontalContentAlignment = HorizontalAlignment.Center;
@@ -263,11 +270,7 @@ sealed class TranslatorWindow : Window
         return template;
     }
 
-    static Button IconButton(string text, double size) => new() { Content = text, Width = size, Height = size,
-        Background = Brushes.Transparent, Foreground = Brushes.White, BorderThickness = new Thickness(0),
-        FontSize = 36, Cursor = Cursors.Hand };
-
-    static Button PillButton(string text) => new() { Content = text, Height = 56, Background = GlassPanel,
+    static Button PillButton(string text) => new() { Content = text, Height = 44, Background = GlassPanel,
         BorderBrush = GlassBorder, BorderThickness = new Thickness(1.5), Foreground = Brushes.White,
         FontSize = 16, Cursor = Cursors.Hand, Template = PillTemplate() };
 
@@ -276,7 +279,7 @@ sealed class TranslatorWindow : Window
         box.AcceptsReturn = true; box.AcceptsTab = true; box.TextWrapping = TextWrapping.Wrap;
         box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         box.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-        box.FontSize = 20; box.Padding = new Thickness(14,12,14,12);
+        box.FontSize = 17; box.FontWeight = FontWeights.Medium; box.Padding = new Thickness(10,8,10,8);
         box.Foreground = Brushes.White; box.Background = Brushes.Transparent;
         box.BorderThickness = new Thickness(0); box.IsReadOnly = readOnly;
         box.CaretBrush = Brushes.White;
