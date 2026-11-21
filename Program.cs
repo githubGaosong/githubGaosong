@@ -279,9 +279,9 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Background = new LinearGradientBrush(Color.FromArgb(92, 92, 158, 205), Color.FromArgb(62, 145, 112, 190), 25);
         backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(205, 180, 225, 255));
         backgroundChoice.BorderThickness = new Thickness(1.3);
-        backgroundChoice.Padding = new Thickness(9, 0, 24, 0);
+        backgroundChoice.Padding = new Thickness(8, 0, 8, 0);
         backgroundChoice.VerticalContentAlignment = VerticalAlignment.Center;
-        backgroundChoice.HorizontalContentAlignment = HorizontalAlignment.Left;
+        backgroundChoice.HorizontalContentAlignment = HorizontalAlignment.Center;
         backgroundChoice.Effect = new DropShadowEffect { BlurRadius = 9, ShadowDepth = 1, Opacity = 0.14, Color = Colors.Black };
         backgroundChoice.Template = LanguageComboTemplate();
         backgroundChoice.ItemContainerStyle = new Style(typeof(ComboBoxItem))
@@ -291,7 +291,7 @@ sealed class TranslatorWindow : Window
                 new Setter(Control.ForegroundProperty, Brushes.White),
                 new Setter(Control.BackgroundProperty, Brushes.Transparent),
                 new Setter(Control.PaddingProperty, new Thickness(14, 10, 14, 10)),
-                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center),
                 new Setter(Control.FontSizeProperty, 12.0),
                 new Setter(Control.TemplateProperty, LanguageItemTemplate())
             }
