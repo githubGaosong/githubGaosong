@@ -86,11 +86,11 @@ sealed class TranslatorWindow : Window
             Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(26),
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
-            BorderThickness = new Thickness(1.5), Padding = new Thickness(10)
+            BorderThickness = new Thickness(1.5), Padding = new Thickness(12, 14, 12, 12)
         };
-        var layout = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
-        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
+        var layout = new Grid { ClipToBounds = false, SnapsToDevicePixels = true };
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(58) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
@@ -114,7 +114,7 @@ sealed class TranslatorWindow : Window
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
-        var languageRow = new Grid { Margin = new Thickness(0, 4, 0, 12) };
+        var languageRow = new Grid { Margin = new Thickness(0, 2, 0, 14), VerticalAlignment = VerticalAlignment.Stretch };
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -124,12 +124,12 @@ sealed class TranslatorWindow : Window
         sourceLang.Width = double.NaN; targetLang.Width = double.NaN;
         sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
         targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
-        sourceLang.Margin = new Thickness(3, 0, 3, 0);
-        targetLang.Margin = new Thickness(3, 0, 3, 0);
+        sourceLang.Margin = new Thickness(3, 2, 3, 2);
+        targetLang.Margin = new Thickness(3, 2, 3, 2);
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
         var swap = new TextBlock { Text = "→", FontSize = 25, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(14, 0, 14, 0) };
+            Margin = new Thickness(12, 0, 12, 0) };
         Grid.SetColumn(swap, 1); languageRow.Children.Add(swap);
         targetLang.SelectionChanged += (_, _) => UpdateUiLanguage();
         Grid.SetColumn(targetLang, 2); languageRow.Children.Add(targetLang);
@@ -137,7 +137,7 @@ sealed class TranslatorWindow : Window
 
         var inputPanel = new Border { Background = GlassPanel, BorderBrush = GlassBorder,
             BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(22), Padding = new Thickness(20,16,20,12),
-            Margin = new Thickness(0,0,0,20) };
+            Margin = new Thickness(0,0,0,14) };
         var inputGrid = new Grid();
         inputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         inputGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -158,7 +158,7 @@ sealed class TranslatorWindow : Window
 
         var outputPanel = new Border { Background = GlassPanel, BorderBrush = GlassBorder,
             BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(22), Padding = new Thickness(0),
-            Margin = new Thickness(0,0,0,20) };
+            Margin = new Thickness(0,0,0,14) };
         var outputGrid = new Grid();
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -269,18 +269,18 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Items.Add("奶油黄");
         backgroundChoice.Items.Add("上传图片…");
         backgroundChoice.SelectedIndex = 0;
-        backgroundChoice.Width = 172;
-        backgroundChoice.Height = 38;
-        backgroundChoice.FontSize = 12;
+        backgroundChoice.Width = 142;
+        backgroundChoice.Height = 30;
+        backgroundChoice.FontSize = 11;
         backgroundChoice.FontWeight = FontWeights.SemiBold;
         backgroundChoice.Foreground = Brushes.White;
         backgroundChoice.Background = new LinearGradientBrush(Color.FromArgb(92, 92, 158, 205), Color.FromArgb(62, 145, 112, 190), 25);
         backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(205, 180, 225, 255));
         backgroundChoice.BorderThickness = new Thickness(1.3);
-        backgroundChoice.Padding = new Thickness(12, 0, 30, 0);
+        backgroundChoice.Padding = new Thickness(9, 0, 24, 0);
         backgroundChoice.VerticalContentAlignment = VerticalAlignment.Center;
         backgroundChoice.HorizontalContentAlignment = HorizontalAlignment.Left;
-        backgroundChoice.Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 2, Opacity = 0.2, Color = Colors.Black };
+        backgroundChoice.Effect = new DropShadowEffect { BlurRadius = 9, ShadowDepth = 1, Opacity = 0.14, Color = Colors.Black };
         backgroundChoice.Template = LanguageComboTemplate();
         backgroundChoice.ItemContainerStyle = new Style(typeof(ComboBoxItem))
         {
@@ -333,6 +333,15 @@ sealed class TranslatorWindow : Window
             }, 35)
         };
         backdropLayer.Background = uploadedBackground != null && choice == "用户图片" ? uploadedBackground : brush;
+        // Keep the compact background selector visually tied to the active theme.
+        if (backgroundChoice != null)
+        {
+            backgroundChoice.Background = new LinearGradientBrush(
+                Color.FromArgb(92, 255, 255, 255),
+                Color.FromArgb(48, 255, 255, 255), 35);
+            backgroundChoice.BorderBrush = new SolidColorBrush(Color.FromArgb(150, 245, 248, 255));
+            backgroundChoice.Foreground = Brushes.White;
+        }
     }
 
     void ChooseBackgroundImage()
