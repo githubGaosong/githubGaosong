@@ -108,8 +108,10 @@ sealed class TranslatorWindow : Window
         languageRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         SetupLanguage(sourceLang, "自动检测");
         SetupLanguage(targetLang, "简体中文");
-        sourceLang.HorizontalAlignment = HorizontalAlignment.Stretch;
-        targetLang.HorizontalAlignment = HorizontalAlignment.Stretch;
+        sourceLang.Width = 190; targetLang.Width = 190;
+        sourceLang.HorizontalAlignment = HorizontalAlignment.Center;
+        targetLang.HorizontalAlignment = HorizontalAlignment.Center;
+        languageRow.HorizontalAlignment = HorizontalAlignment.Center;
         Grid.SetColumn(sourceLang, 0); languageRow.Children.Add(sourceLang);
         var swap = new TextBlock { Text = "→", FontSize = 25, Foreground = WhiteBrush,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
@@ -143,17 +145,17 @@ sealed class TranslatorWindow : Window
             BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(22), Padding = new Thickness(0),
             Margin = new Thickness(0,0,0,20) };
         var outputGrid = new Grid();
-        outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(52) });
+        outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
         outputGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         var outputHeader = new Grid { Margin = new Thickness(24,0,24,0) };
-        var outputLabel = new TextBlock { Text = "译文", FontSize = 18, FontWeight = FontWeights.SemiBold,
+        var outputLabel = new TextBlock { Text = "译文", FontSize = 15, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center };
         outputHeader.Children.Add(outputLabel);
         outputGrid.Children.Add(outputHeader);
         var outputDivider = new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(55,255,255,255)),
             VerticalAlignment = VerticalAlignment.Bottom };
         outputHeader.Children.Add(outputDivider);
-        StyleEditor(translated, true); translated.FontSize = 16; translated.FontWeight = FontWeights.Medium; translated.Padding = new Thickness(16,12,16,12);
+        StyleEditor(translated, true); translated.FontSize = 14; translated.FontWeight = FontWeights.Normal; translated.Padding = new Thickness(14,10,14,10);
         // Match the input editor's 20px panel inset so both vertical scrollbars share one vertical line.
         translated.Margin = new Thickness(0, 0, 20, 0);
         translated.Background = Brushes.Transparent; translated.BorderThickness = new Thickness(0);
