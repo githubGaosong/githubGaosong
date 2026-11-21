@@ -128,7 +128,7 @@ sealed class TranslatorWindow : Window
         titleText = title;
         header.Children.Add(title);
         SetupBackgroundSelector();
-        backgroundChoice.Margin = new Thickness(0, 0, 18, 0);
+        backgroundChoice.Margin = new Thickness(0, 0, 0, 0);
         Grid.SetColumn(backgroundChoice, 1); header.Children.Add(backgroundChoice);
         var minimize = HeaderButton("—", 40); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
         Grid.SetColumn(minimize, 2); header.Children.Add(minimize);
@@ -293,7 +293,7 @@ sealed class TranslatorWindow : Window
         backgroundChoice.Items.Add("奶油黄");
         backgroundChoice.Items.Add("上传图片…");
         backgroundChoice.SelectedIndex = 0;
-        backgroundChoice.Width = 116;
+        backgroundChoice.Width = 104;
         backgroundChoice.Height = 28;
         backgroundChoice.FontSize = 10;
         backgroundChoice.FontWeight = FontWeights.SemiBold;
