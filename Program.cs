@@ -22,7 +22,7 @@ sealed class MainWindow : Form
 {
     const int WM_HOTKEY = 0x0312;
     const int HOTKEY_TRANSLATE = 1;
-    const int HOTKEY_RESULT = 2;
+    const int HOTKEY_WINDOW = 2;
     const uint MOD_NOREPEAT = 0x4000;
     const uint VK_F4 = 0x73;
     const uint VK_F5 = 0x74;
@@ -46,9 +46,9 @@ sealed class MainWindow : Form
         Font = new Font("Microsoft YaHei UI", 11F)
     };
     readonly Button translateButton = new() { Text = "翻译 (F5)", Height = 36 };
-    readonly Label status = new() { AutoSize = true, Text = "粘贴游戏文字，按 F5 翻译；F4 显示/隐藏译文区域。" };
+    readonly Label status = new() { AutoSize = true, Text = "F5 翻译 · F4 显示/隐藏窗口。窗口置顶，可拖动标题栏移动。" };
     CancellationTokenSource? requestCts;
-    bool resultVisible = true;
+    
 
     public MainWindow()
     {
@@ -56,6 +56,7 @@ sealed class MainWindow : Form
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(620, 570);
         MinimumSize = new Size(460, 440);
+        TopMost = true;
         Font = new Font("Microsoft YaHei UI", 9F);
 
         sourceLabel.SetBounds(14, 12, 580, 22);
@@ -81,7 +82,7 @@ sealed class MainWindow : Form
         {
             requestCts?.Cancel();
             UnregisterHotKey(Handle, HOTKEY_TRANSLATE);
-            UnregisterHotKey(Handle, HOTKEY_RESULT);
+            UnregisterHotKey(Handle, HOTKEY_WINDOW);
         };
     }
 
@@ -89,7 +90,7 @@ sealed class MainWindow : Form
     {
         base.OnHandleCreated(e);
         bool f5 = RegisterHotKey(Handle, HOTKEY_TRANSLATE, MOD_NOREPEAT, VK_F5);
-        bool f4 = RegisterHotKey(Handle, HOTKEY_RESULT, MOD_NOREPEAT, VK_F4);
+        bool f4 = RegisterHotKey(Handle, HOTKEY_WINDOW, MOD_NOREPEAT, VK_F4);
         if (!f5 || !f4)
             status.Text = "快捷键注册失败：可能被其他软件占用。";
     }
@@ -100,18 +101,20 @@ sealed class MainWindow : Form
         {
             if (m.WParam.ToInt32() == HOTKEY_TRANSLATE)
                 _ = TranslateAsync();
-            else if (m.WParam.ToInt32() == HOTKEY_RESULT)
-                ToggleResult();
+            else if (m.WParam.ToInt32() == HOTKEY_WINDOW)
+            {
+                if (Visible) Hide();
+                else
+                {
+                    Show();
+                    WindowState = FormWindowState.Normal;
+                    TopMost = true;
+                    BringToFront();
+                    Activate();
+                }
+            }
         }
         base.WndProc(ref m);
-    }
-
-    void ToggleResult()
-    {
-        resultVisible = !resultVisible;
-        resultLabel.Visible = resultVisible;
-        translated.Visible = resultVisible;
-        status.Text = resultVisible ? "译文区域已显示。" : "译文区域已隐藏。";
     }
 
     async Task TranslateAsync()
@@ -155,7 +158,6 @@ sealed class MainWindow : Form
                 throw new InvalidOperationException("接口返回的译文为空。请检查原文是否过长，或稍后重试。");
 
             translated.Text = result;
-            if (!resultVisible) ToggleResult();
             status.Text = "翻译完成。";
         }
         catch (OperationCanceledException) { }
