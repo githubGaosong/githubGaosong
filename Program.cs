@@ -364,7 +364,10 @@ sealed class TranslatorWindow : Window
     static ControlTemplate HeaderButtonTemplate()
     {
         var border = new FrameworkElementFactory(typeof(Border));
+        border.Name = "headerSurface";
         border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+        border.SetValue(Border.RenderTransformProperty, new ScaleTransform(1, 1));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
