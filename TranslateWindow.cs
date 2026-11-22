@@ -666,7 +666,6 @@ sealed class TranslateWindow : Window
         track.SetBinding(Track.MaximumProperty, new System.Windows.Data.Binding(nameof(ScrollBar.Maximum)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
         track.SetBinding(Track.ValueProperty, new System.Windows.Data.Binding(nameof(ScrollBar.Value)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
         track.SetBinding(Track.ViewportSizeProperty, new System.Windows.Data.Binding(nameof(ScrollBar.ViewportSize)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        track.SetValue(Track.ThumbProperty, new FrameworkElementFactory(typeof(Thumb)));
         track.SetValue(Track.ThumbProperty, new Thumb { Style = thumbStyle });
 
         var surface = new FrameworkElementFactory(typeof(Border));
