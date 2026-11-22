@@ -16,7 +16,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Publish compact framework-dependent single-file EXE
-        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
+        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
       - name: Upload Translate online
         uses: actions/upload-artifact@v4
         with:
