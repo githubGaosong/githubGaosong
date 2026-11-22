@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -34,6 +35,9 @@ sealed class TranslateWindow : Window
     TextBlock? titleText, inputHint, outputLabel;
     Button? hideButton, pinButton;
     string currentBackground = "半透明玻璃 · 默认";
+    string? uploadedBackgroundFile;
+    static string BackgroundDataDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TranslateOnline", "Backgrounds");
+    static string BackgroundSettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TranslateOnline", "background-settings.txt");
     readonly TextBlock charCount = new();
     readonly TextBlock status = new();
     readonly Button translateButton = new();
@@ -112,6 +116,7 @@ sealed class TranslateWindow : Window
         titleText = title;
         header.Children.Add(title);
         SetupBackgroundSelector();
+        RestoreBackgroundSettings();
         backgroundChoice.Margin = new Thickness(0, 0, 0, 0);
         Grid.SetColumn(backgroundChoice, 1); header.Children.Add(backgroundChoice);
         var minimize = HeaderButton("—"); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
@@ -315,6 +320,7 @@ sealed class TranslateWindow : Window
             if (choice == "上传图片…") { ChooseBackgroundImage(); return; }
             currentBackground = choice;
             ApplyBackground(choice);
+            SaveBackgroundSettings(choice, null);
         };
     }
 
@@ -385,15 +391,107 @@ sealed class TranslateWindow : Window
             bitmap.UriSource = new Uri(dialog.FileName);
             bitmap.EndInit();
             bitmap.Freeze();
-            uploadedBackground = new ImageBrush(bitmap) { Stretch = Stretch.UniformToFill };
+            Directory.CreateDirectory(BackgroundDataDirectory);
+            string extension = Path.GetExtension(dialog.FileName);
+            if (string.IsNullOrWhiteSpace(extension) || extension.Length > 10) extension = ".img";
+            string destination = Path.Combine(BackgroundDataDirectory, "custom-background" + extension.ToLowerInvariant());
+            string temporary = destination + ".tmp";
+            File.Copy(dialog.FileName, temporary, true);
+            File.Move(temporary, destination, true);
+
+            // Load from the app-owned copy so the original source file can be moved or deleted.
+            var savedBitmap = new System.Windows.Media.Imaging.BitmapImage();
+            savedBitmap.BeginInit();
+            savedBitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            savedBitmap.UriSource = new Uri(destination);
+            savedBitmap.EndInit();
+            savedBitmap.Freeze();
+
+            string? previousFile = uploadedBackgroundFile;
+            uploadedBackground = new ImageBrush(savedBitmap) { Stretch = Stretch.UniformToFill };
+            uploadedBackgroundFile = destination;
             currentBackground = "用户图片";
-            backdropLayer!.Background = uploadedBackground;
+            ApplyBackground("用户图片");
             backgroundChoice.SelectedItem = "上传图片…";
+            SaveBackgroundSettings("用户图片", destination);
+
+            // Remove the previous app-owned image only after the replacement and settings are saved.
+            if (!string.IsNullOrEmpty(previousFile) &&
+                !string.Equals(previousFile, destination, StringComparison.OrdinalIgnoreCase) &&
+                File.Exists(previousFile))
+                File.Delete(previousFile);
         }
         catch (Exception ex)
         {
             MessageBox.Show(this, "无法加载图片：" + ex.Message, "背景图片", MessageBoxButton.OK, MessageBoxImage.Warning);
             backgroundChoice.SelectedIndex = 0;
+        }
+    }
+
+    void SaveBackgroundSettings(string choice, string? imageFile)
+    {
+        try
+        {
+            string directory = Path.GetDirectoryName(BackgroundSettingsPath)!;
+            Directory.CreateDirectory(directory);
+            string temporary = BackgroundSettingsPath + ".tmp";
+            File.WriteAllLines(temporary, new[]
+            {
+                choice,
+                imageFile ?? string.Empty
+            });
+            File.Move(temporary, BackgroundSettingsPath, true);
+        }
+        catch
+        {
+            // A settings write failure must not prevent the app from being used.
+        }
+    }
+
+    void RestoreBackgroundSettings()
+    {
+        try
+        {
+            if (!File.Exists(BackgroundSettingsPath)) return;
+            string[] settings = File.ReadAllLines(BackgroundSettingsPath);
+            if (settings.Length == 0) return;
+
+            string choice = settings[0];
+            if (choice == "用户图片" && settings.Length > 1 &&
+                !string.IsNullOrWhiteSpace(settings[1]) && File.Exists(settings[1]))
+            {
+                string imagePath = Path.GetFullPath(settings[1]);
+                string ownedDirectory = Path.GetFullPath(BackgroundDataDirectory) + Path.DirectorySeparatorChar;
+                if (!imagePath.StartsWith(ownedDirectory, StringComparison.OrdinalIgnoreCase)) return;
+
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri(imagePath);
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                uploadedBackgroundFile = imagePath;
+                uploadedBackground = new ImageBrush(bitmap) { Stretch = Stretch.UniformToFill };
+                currentBackground = "用户图片";
+                ApplyBackground("用户图片");
+                backgroundChoice.SelectedItem = "上传图片…";
+                return;
+            }
+
+            if (backgroundChoice.Items.Contains(choice))
+            {
+                currentBackground = choice;
+                ApplyBackground(choice);
+                backgroundChoice.SelectedItem = choice;
+            }
+        }
+        catch
+        {
+            // If a saved image is missing or invalid, safely keep the default background.
+            currentBackground = "半透明玻璃 · 默认";
+            ApplyBackground(currentBackground);
+            if (backgroundChoice.Items.Count > 0) backgroundChoice.SelectedIndex = 0;
         }
     }
 
