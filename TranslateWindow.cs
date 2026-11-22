@@ -475,7 +475,7 @@ sealed class TranslateWindow : Window
                 uploadedBackground = new ImageBrush(bitmap) { Stretch = Stretch.UniformToFill };
                 currentBackground = "用户图片";
                 ApplyBackground("用户图片");
-                backgroundChoice.SelectedItem = "上传图片…";
+                // Keep the selector on its default item during startup; selecting the upload action would reopen the file picker.
                 return;
             }
 
