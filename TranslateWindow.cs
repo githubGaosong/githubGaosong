@@ -55,7 +55,7 @@ sealed class TranslateWindow : Window
     public TranslateWindow()
     {
         Title = "Translate";
-        Width = 540; Height = 460; MinWidth = 420; MinHeight = 340;
+        Width = 540; Height = 460; MinWidth = 320; MinHeight = 280;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
