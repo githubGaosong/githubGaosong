@@ -630,50 +630,15 @@ sealed class TranslateWindow : Window
     static void StyleEditor(TextBox box, bool readOnly)
     {
         box.AcceptsReturn = true; box.AcceptsTab = true; box.TextWrapping = TextWrapping.Wrap;
-        box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        box.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
         box.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
         box.FontSize = 17; box.FontWeight = FontWeights.Medium; box.Padding = new Thickness(10,8,10,8);
         box.Foreground = Brushes.White; box.Background = Brushes.Transparent;
         box.BorderThickness = new Thickness(0); box.IsReadOnly = readOnly;
         box.CaretBrush = Brushes.White;
-        // Give the editor's native ScrollViewer a subtle glass scrollbar.
-        box.Resources[typeof(ScrollBar)] = CreateGlassScrollBarStyle();
+        // Hide the visual scrollbar while retaining wheel, keyboard and programmatic scrolling.
     }
 
-    static Style CreateGlassScrollBarStyle()
-    {
-        // Keep WPF's built-in ScrollBar ControlTemplate. Building a Track with
-        // FrameworkElementFactory.AppendChild is invalid: Track is not a normal
-        // FrameworkElementFactory child and causes a startup XamlParseException.
-        // Override only the Thumb visual so native scrolling behavior is preserved.
-        var thumbBorder = new FrameworkElementFactory(typeof(Border));
-        thumbBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
-        thumbBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(118, 255, 255, 255)));
-        thumbBorder.SetValue(Border.MarginProperty, new Thickness(1, 2, 1, 2));
-
-        var thumbTemplate = new ControlTemplate(typeof(Thumb)) { VisualTree = thumbBorder };
-        var thumbStyle = new Style(typeof(Thumb));
-        thumbStyle.Setters.Add(new Setter(Control.TemplateProperty, thumbTemplate));
-        thumbStyle.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, 26.0));
-        thumbStyle.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 6.0));
-
-        var thumbHover = new Trigger { Property = Thumb.IsMouseOverProperty, Value = true };
-        thumbHover.Setters.Add(new Setter(Border.BackgroundProperty,
-            new SolidColorBrush(Color.FromArgb(178, 255, 255, 255))));
-        thumbTemplate.Triggers.Add(thumbHover);
-
-        var thumbDragging = new Trigger { Property = Thumb.IsDraggingProperty, Value = true };
-        thumbDragging.Setters.Add(new Setter(UIElement.OpacityProperty, 0.9));
-        thumbTemplate.Triggers.Add(thumbDragging);
-
-        var style = new Style(typeof(ScrollBar));
-        style.Setters.Add(new Setter(FrameworkElement.WidthProperty, 9.0));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
-        // The stock ScrollBar template resolves its Thumb from the ScrollBar resources.
-        style.Resources[typeof(Thumb)] = thumbStyle;
-        return style;
-    }
 
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
