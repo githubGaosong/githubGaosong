@@ -407,4 +407,327 @@ sealed class TranslateWindow : Window
         charCount.ToolTip = words[6];
         backgroundChoice.ToolTip = words[7];
     }
+
+    static void SetupLanguage(ComboBox box, string selected)
+    {
+        foreach (var language in LanguageCatalog.Languages) box.Items.Add(language.Name);
+        box.SelectedItem = selected == "自动检测" ? Languages[0].Name : Languages[2].Name;
+        box.Width = double.NaN; box.Height = 40; box.FontSize = 12; box.FontWeight = FontWeights.SemiBold;
+        box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
+        box.BorderBrush = new SolidColorBrush(Color.FromArgb(115, 225, 238, 255));
+        box.BorderThickness = new Thickness(1.2); box.HorizontalContentAlignment = HorizontalAlignment.Center;
+        box.VerticalContentAlignment = VerticalAlignment.Center;
+        box.Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.16, Color = Colors.Black };
+        box.SnapsToDevicePixels = true; box.Focusable = true; box.IsHitTestVisible = true;
+        box.Padding = new Thickness(10, 0, 10, 0);
+        box.Template = LanguageComboTemplate();
+        box.ItemContainerStyle = new Style(typeof(ComboBoxItem))
+        {
+            Setters =
+            {
+                new Setter(Control.ForegroundProperty, Brushes.White),
+                new Setter(Control.BackgroundProperty, Brushes.Transparent),
+                new Setter(Control.PaddingProperty, new Thickness(14, 10, 14, 10)),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center),
+                new Setter(Control.FontSizeProperty, 13.0),
+                new Setter(Control.FontWeightProperty, FontWeights.Medium),
+                new Setter(Control.TemplateProperty, LanguageItemTemplate())
+            }
+        };
+    }
+
+    static ControlTemplate LanguageComboTemplate()
+    {
+        // A glass surface now owns the background/border, while the transparent
+        // toggle overlays it so the full selector remains clickable.
+        var surface = new FrameworkElementFactory(typeof(Border));
+        surface.SetValue(Border.CornerRadiusProperty, new CornerRadius(15));
+        surface.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        surface.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        surface.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        surface.SetValue(UIElement.ClipToBoundsProperty, true);
+
+        var grid = new FrameworkElementFactory(typeof(Grid));
+        var toggle = new FrameworkElementFactory(typeof(ToggleButton));
+        toggle.SetValue(ToggleButton.FocusableProperty, false);
+        toggle.SetValue(Control.BackgroundProperty, Brushes.Transparent);
+        toggle.SetValue(Control.BorderThicknessProperty, new Thickness(0));
+        var toggleSurface = new FrameworkElementFactory(typeof(Border));
+        // A non-null transparent background is essential: otherwise the surface
+        // does not participate in hit testing and the selector cannot be opened.
+        toggleSurface.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        toggleSurface.SetValue(Border.BorderThicknessProperty, new Thickness(0));
+        toggle.SetValue(Control.TemplateProperty, new ControlTemplate(typeof(ToggleButton))
+        {
+            VisualTree = toggleSurface
+        });
+        toggle.SetBinding(ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
+        {
+            RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(ComboBox), 1),
+            Mode = System.Windows.Data.BindingMode.TwoWay
+        });
+        grid.AppendChild(toggle);
+
+        var selected = new FrameworkElementFactory(typeof(ContentPresenter));
+        selected.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
+        selected.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+        selected.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        selected.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 0, 8, 0));
+        selected.SetValue(UIElement.IsHitTestVisibleProperty, false);
+        // Render the selected label in a full-width TextBlock so text alignment
+        // is centered independently of the content's natural (left-aligned) size.
+        var selectedText = new FrameworkElementFactory(typeof(TextBlock));
+        selectedText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding());
+        selectedText.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
+        selectedText.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+        selectedText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        selectedText.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+        selected.SetValue(ContentPresenter.ContentTemplateProperty, new DataTemplate { VisualTree = selectedText });
+        grid.AppendChild(selected);
+
+        var popup = new FrameworkElementFactory(typeof(Popup));
+        popup.Name = "PART_Popup";
+        popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
+        popup.SetValue(Popup.AllowsTransparencyProperty, true);
+        popup.SetValue(Popup.FocusableProperty, false);
+        popup.SetValue(Popup.PopupAnimationProperty, PopupAnimation.Fade);
+        popup.SetBinding(Popup.PlacementTargetProperty, new System.Windows.Data.Binding
+        {
+            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
+        });
+        popup.SetBinding(Popup.IsOpenProperty, new System.Windows.Data.Binding(nameof(ComboBox.IsDropDownOpen))
+        {
+            // Popup is hosted in a separate presentation source; the template
+            // parent binding is reliable where FindAncestor cannot cross Popup.
+            RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent
+        });
+        var popupBorder = new FrameworkElementFactory(typeof(Border));
+        popupBorder.SetValue(Border.BackgroundProperty, new LinearGradientBrush(Color.FromArgb(250, 25, 43, 67), Color.FromArgb(248, 48, 54, 82), 25));
+        popupBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(205, 155, 205, 245)));
+        popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1.1));
+        popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(14));
+        popupBorder.SetValue(Border.PaddingProperty, new Thickness(5));
+        popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 6, 0, 0));
+        var popupScroll = new FrameworkElementFactory(typeof(ScrollViewer));
+        popupScroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
+        popupScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
+        popupScroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+        popupScroll.AppendChild(new FrameworkElementFactory(typeof(ItemsPresenter)));
+        popupBorder.AppendChild(popupScroll);
+        popup.AppendChild(popupBorder);
+        grid.AppendChild(popup);
+
+        surface.AppendChild(grid);
+        return new ControlTemplate(typeof(ComboBox)) { VisualTree = surface };
+    }
+
+    static ControlTemplate LanguageItemTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.Name = "headerSurface";
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+        border.SetValue(Border.RenderTransformProperty, new ScaleTransform(1, 1));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        content.SetValue(UIElement.IsHitTestVisibleProperty, false);
+        border.AppendChild(content);
+        var template = new ControlTemplate(typeof(ComboBoxItem)) { VisualTree = border };
+        var hover = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(92, 105, 165, 225))));
+        hover.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White));
+        template.Triggers.Add(hover);
+        var selected = new Trigger { Property = ComboBoxItem.IsSelectedProperty, Value = true };
+        selected.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(125, 80, 145, 220))));
+        selected.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White));
+        template.Triggers.Add(selected);
+        return template;
+    }
+
+    static ControlTemplate PillTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.Name = "surface";
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(16));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        border.SetValue(Border.PaddingProperty, new Thickness(12, 0, 12, 0));
+        border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+        border.SetValue(Border.EffectProperty, new System.Windows.Media.Effects.DropShadowEffect {
+            BlurRadius = 12, ShadowDepth = 2, Opacity = 0.18, Color = Colors.Black
+        });
+        border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+        border.SetValue(UIElement.RenderTransformProperty, new ScaleTransform(1, 1));
+        var cp = new FrameworkElementFactory(typeof(ContentPresenter));
+        cp.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(cp);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(68, 255, 255, 255))));
+        hover.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(150, 255, 255, 255))));
+        template.Triggers.Add(hover);
+        var pressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(145, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(220, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
+        pressed.Setters.Add(new Setter(UIElement.OpacityProperty, 0.78));
+        pressed.Setters.Add(new Setter(Border.RenderTransformProperty, new ScaleTransform(0.96, 0.96)) { TargetName = "surface" });
+        template.Triggers.Add(pressed);
+        var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+        disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.42));
+        template.Triggers.Add(disabled);
+        return template;
+    }
+
+    static Button HeaderButton(string text, double size)
+    {
+        return new Button {
+            Content = text == "—" ? "−" : "×", Width = 34, Height = 34,
+            Margin = new Thickness(6, 0, 0, 0),
+            Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255)),
+            Foreground = new SolidColorBrush(Color.FromRgb(248, 250, 255)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255)),
+            BorderThickness = new Thickness(1), FontFamily = new FontFamily("Segoe UI"),
+            FontSize = text == "—" ? 17 : 16, FontWeight = FontWeights.Normal,
+            Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center, Cursor = Cursors.Hand,
+            Focusable = false, Template = HeaderButtonTemplate()
+        };
+    }
+
+    static ControlTemplate HeaderButtonTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.Name = "headerSurface";
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        border.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+        border.SetValue(Border.RenderTransformProperty, new ScaleTransform(1, 1));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(content);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(65, 255, 255, 255))));
+        template.Triggers.Add(hover);
+        var pressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        pressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(105, 255, 255, 255))));
+        pressed.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(2)));
+        pressed.Setters.Add(new Setter(Border.RenderTransformProperty, new ScaleTransform(0.94, 0.94)) { TargetName = "headerSurface" });
+        template.Triggers.Add(pressed);
+        return template;
+    }
+
+    static Button PillButton(string text) => new() { Content = text, Height = 42, Background = GlassPanel,
+        BorderBrush = GlassBorder, BorderThickness = new Thickness(1.2), Foreground = Brushes.White,
+        FontSize = 14, FontWeight = FontWeights.Medium, Cursor = Cursors.Hand, Template = PillTemplate() };
+
+    static void StyleEditor(TextBox box, bool readOnly)
+    {
+        box.AcceptsReturn = true; box.AcceptsTab = true; box.TextWrapping = TextWrapping.Wrap;
+        box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        box.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        box.FontSize = 17; box.FontWeight = FontWeights.Medium; box.Padding = new Thickness(10,8,10,8);
+        box.Foreground = Brushes.White; box.Background = Brushes.Transparent;
+        box.BorderThickness = new Thickness(0); box.IsReadOnly = readOnly;
+        box.CaretBrush = Brushes.White;
+    }
+
+    void CopyText(string text)
+    {
+        if (!string.IsNullOrWhiteSpace(text)) { Clipboard.SetText(text); status.Text = "已复制"; }
+    }
+
+    IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WmNcHitTest && ResizeHitTest(hwnd, lParam, out int hit))
+        {
+            handled = true;
+            return new IntPtr(hit);
+        }
+        if (msg == WmHotkey)
+        {
+            if (wParam.ToInt32() == HotkeyTranslate) _ = TranslateAsync();
+            if (wParam.ToInt32() == HotkeyToggle)
+            {
+                if (IsVisible) Hide();
+                else { Show(); WindowState = WindowState.Normal; Activate(); }
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    bool ResizeHitTest(IntPtr hwnd, IntPtr lParam, out int hit)
+    {
+        hit = 0;
+        if (!GetWindowRect(hwnd, out RECT r)) return false;
+        long packed = lParam.ToInt64();
+        int x = unchecked((short)(packed & 0xffff));
+        int y = unchecked((short)((packed >> 16) & 0xffff));
+        // Larger corner zones make diagonal resizing easier to grab.
+        const int edge = 30;
+        const int corner = 48;
+        bool left = x >= r.Left && x < r.Left + edge;
+        bool right = x < r.Right && x >= r.Right - edge;
+        bool top = y >= r.Top && y < r.Top + edge;
+        bool bottom = y < r.Bottom && y >= r.Bottom - edge;
+        bool nearLeft = x >= r.Left && x < r.Left + corner;
+        bool nearRight = x < r.Right && x >= r.Right - corner;
+        bool nearTop = y >= r.Top && y < r.Top + corner;
+        bool nearBottom = y < r.Bottom && y >= r.Bottom - corner;
+        if (nearTop && nearLeft) hit = HtTopLeft;
+        else if (nearTop && nearRight) hit = HtTopRight;
+        else if (nearBottom && nearLeft) hit = HtBottomLeft;
+        else if (nearBottom && nearRight) hit = HtBottomRight;
+        else if (left) hit = HtLeft;
+        else if (right) hit = HtRight;
+        else if (top) hit = HtTop;
+        else if (bottom) hit = HtBottom;
+        return hit != 0;
+    }
+
+    async Task TranslateAsync()
+    {
+        string input = source.Text.Trim();
+        if (input.Length == 0) { status.Text = "请先输入需要翻译的文字。"; return; }
+        if (input.Length > 5000) { status.Text = "文本超过 5000 字符，请分段翻译。"; return; }
+        request?.Cancel();
+        var current = new CancellationTokenSource(); request = current;
+        translateButton.IsEnabled = false; status.Text = "正在翻译…";
+        string pair = $"{LanguageCode(sourceLang.SelectedItem?.ToString(), true)}|{LanguageCode(targetLang.SelectedItem?.ToString(), false)}";
+        try
+        {
+            var pieces = TranslationService.Split(input, 450); var output = new List<string>();
+            for (int i = 0; i < pieces.Count; i++)
+            {
+                current.Token.ThrowIfCancellationRequested();
+                status.Text = pieces.Count > 1 ? $"正在翻译… ({i + 1}/{pieces.Count})" : "正在翻译…";
+                output.Add(await TranslationService.TranslateChunk(pieces[i], pair, current.Token));
+            }
+            translated.Text = string.Join(" ", output); status.Text = "翻译完成";
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { if (!current.IsCancellationRequested) status.Text = "翻译失败：" + ex.Message; }
+        finally
+        {
+            current.Dispose();
+            if (ReferenceEquals(request, current)) { request = null; translateButton.IsEnabled = true; }
+        }
+    }
+
+    static string LanguageCode(string? name, bool source)
+    {
+        foreach (var language in LanguageCatalog.Languages)
+            if (language.Name == name)
+                return language.Code;
+        return source ? "autodetect" : "zh-CN";
+    }
+
 }
