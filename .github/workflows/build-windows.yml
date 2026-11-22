@@ -19,7 +19,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Publish self-contained portable single-file EXE
-        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
+        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -p:DebugSymbols=false -p:Optimize=true -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=false
       - name: Verify standalone executable
         shell: pwsh
         run: |

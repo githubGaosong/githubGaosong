@@ -6,9 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Media.Effects;
-using System.Windows.Shapes;
 using System.Windows.Interop;
-using System.Windows.Shell;
 using Microsoft.Win32;
 
 
@@ -115,9 +113,9 @@ sealed class TranslateWindow : Window
         SetupBackgroundSelector();
         backgroundChoice.Margin = new Thickness(0, 0, 0, 0);
         Grid.SetColumn(backgroundChoice, 1); header.Children.Add(backgroundChoice);
-        var minimize = HeaderButton("—", 40); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
+        var minimize = HeaderButton("—"); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
         Grid.SetColumn(minimize, 2); header.Children.Add(minimize);
-        var close = HeaderButton("×", 40); close.Click += (_, _) => Close();
+        var close = HeaderButton("×"); close.Click += (_, _) => Close();
         Grid.SetColumn(close, 3); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
@@ -583,7 +581,7 @@ sealed class TranslateWindow : Window
         return template;
     }
 
-    static Button HeaderButton(string text, double size)
+    static Button HeaderButton(string text)
     {
         return new Button {
             Content = text == "—" ? "−" : "×", Width = 34, Height = 34,
@@ -638,11 +636,6 @@ sealed class TranslateWindow : Window
         box.Foreground = Brushes.White; box.Background = Brushes.Transparent;
         box.BorderThickness = new Thickness(0); box.IsReadOnly = readOnly;
         box.CaretBrush = Brushes.White;
-    }
-
-    void CopyText(string text)
-    {
-        if (!string.IsNullOrWhiteSpace(text)) { Clipboard.SetText(text); status.Text = "已复制"; }
     }
 
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

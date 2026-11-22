@@ -11,9 +11,11 @@
     <SelfContained>true</SelfContained>
     <UseAppHost>true</UseAppHost>
     <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
     <PublishReadyToRun>false</PublishReadyToRun>
   </PropertyGroup>
 </Project>
