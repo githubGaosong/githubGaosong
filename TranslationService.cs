@@ -4,8 +4,7 @@ using System.Text.Json;
 
 internal static class TranslationService
 {
-    private const int ChunkLimit = 450;
-    private static readonly HttpClient Http = new(new SocketsHttpHandler
+        private static readonly HttpClient Http = new(new SocketsHttpHandler
     {
         AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
         PooledConnectionLifetime = TimeSpan.FromMinutes(10)
@@ -28,7 +27,7 @@ internal static class TranslationService
             int end = Math.Min(start + limit, text.Length);
             if (end < text.Length)
             {
-                int boundary = text.LastIndexOfAny(new[] { ' ', '\\t', '\\r', '\\n' }, end - 1, end - start);
+                int boundary = text.LastIndexOfAny(new[] { ' ', '\t', '\r', '\n' }, end - 1, end - start);
                 if (boundary > start + limit / 2)
                     end = boundary + 1;
             }
