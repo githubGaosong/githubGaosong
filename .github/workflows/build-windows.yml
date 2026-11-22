@@ -20,6 +20,18 @@ jobs:
           dotnet-version: 8.0.x
       - name: Publish self-contained portable single-file EXE
         run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
+      - name: Verify standalone executable
+        shell: pwsh
+        run: |
+          $publish = "bin/Release/net8.0-windows/win-x64/publish"
+          $exe = Join-Path $publish "Translate online.exe"
+          if (!(Test-Path $exe)) { throw "Translate online.exe was not produced." }
+          $files = @(Get-ChildItem $publish -File)
+          if ($files.Count -ne 1 -or $files[0].Name -ne "Translate online.exe") {
+            $files | ForEach-Object { Write-Host $_.Name }
+            throw "Publish output is not a single executable."
+          }
+          Write-Host ("Verified EXE size: {0} bytes" -f (Get-Item $exe).Length)
       - name: Upload Translate online
         uses: actions/upload-artifact@v4
         with:
