@@ -11,7 +11,6 @@
     <SelfContained>false</SelfContained>
     <UseAppHost>true</UseAppHost>
     <PublishSingleFile>true</PublishSingleFile>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <PublishReadyToRun>false</PublishReadyToRun>
