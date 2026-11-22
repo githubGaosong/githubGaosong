@@ -43,7 +43,10 @@ sealed class TranslateWindow : Window
     readonly Button translateButton = new();
     readonly CheckBox topmost = new();
     HwndSource? hwndSource;
-    Grid? rootSurface;
+    UIElement? normalContent;
+    Grid? miniRoot;
+    TextBox? miniSource, miniTranslated;
+    TextBlock? miniStatus;
     bool miniMode;
     double normalWidth = 540, normalHeight = 460;
     CancellationTokenSource? request;
@@ -68,7 +71,7 @@ sealed class TranslateWindow : Window
         TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
 
         var root = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
-        rootSurface = root;
+        normalContent = root;
         var miniContextItem = new MenuItem { Header = "切换迷你模式 (F6)" };
         miniContextItem.Click += (_, _) => ToggleMiniMode();
         root.ContextMenu = new ContextMenu();
@@ -258,27 +261,86 @@ sealed class TranslateWindow : Window
 
     void ToggleMiniMode()
     {
-        if (rootSurface == null) return;
         if (!miniMode)
         {
             normalWidth = Math.Max(Width, 420);
             normalHeight = Math.Max(Height, 340);
             miniMode = true;
-            rootSurface.LayoutTransform = new ScaleTransform(0.18, 0.18);
-            MinWidth = 72;
-            MinHeight = 62;
-            Width = 97;
-            Height = 83;
+            miniRoot ??= BuildMiniView();
+            Content = miniRoot;
+            MinWidth = 190;
+            MinHeight = 145;
+            Width = 230;
+            Height = 175;
+            ResizeMode = ResizeMode.CanResize;
         }
         else
         {
             miniMode = false;
-            rootSurface.LayoutTransform = Transform.Identity;
+            Content = normalContent;
             MinWidth = 420;
             MinHeight = 340;
             Width = normalWidth;
             Height = normalHeight;
         }
+    }
+
+    Grid BuildMiniView()
+    {
+        var panel = new Grid { Margin = new Thickness(8), ClipToBounds = true };
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(24) });
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        panel.Background = new SolidColorBrush(Color.FromArgb(235, 35, 49, 72));
+
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var caption = new TextBlock { Text = "Translate · 迷你模式", Foreground = WhiteBrush,
+            FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
+        header.Children.Add(caption);
+        var restore = new Button { Content = "恢复", FontSize = 10, Padding = new Thickness(7, 1, 7, 1),
+            MinWidth = 38, Height = 21, VerticalAlignment = VerticalAlignment.Center };
+        restore.Click += (_, _) => ToggleMiniMode();
+        Grid.SetColumn(restore, 1); header.Children.Add(restore);
+        Grid.SetRow(header, 0); panel.Children.Add(header);
+
+        miniSource = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, FontSize = 11,
+            Margin = new Thickness(0, 3, 0, 3), Padding = new Thickness(5),
+            Background = new SolidColorBrush(Color.FromArgb(75, 255, 255, 255)),
+            Foreground = Brushes.White, BorderBrush = GlassBorder,
+            Text = source.Text };
+        miniSource.TextChanged += (_, _) => source.Text = miniSource.Text;
+        Grid.SetRow(miniSource, 1); panel.Children.Add(miniSource);
+
+        miniTranslated = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, FontSize = 11,
+            Margin = new Thickness(0, 3, 0, 3), Padding = new Thickness(5),
+            Background = new SolidColorBrush(Color.FromArgb(55, 255, 255, 255)),
+            Foreground = Brushes.White, BorderBrush = GlassBorder,
+            Text = translated.Text };
+        miniTranslated.TextChanged += (_, _) => translated.Text = miniTranslated.Text;
+        Grid.SetRow(miniTranslated, 2); panel.Children.Add(miniTranslated);
+
+        var footer = new Grid();
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var go = new Button { Content = "翻译 (F5)", FontSize = 10, Height = 23, Padding = new Thickness(10, 1, 10, 1) };
+        go.Click += async (_, _) =>
+        {
+            source.Text = miniSource.Text;
+            await TranslateAsync();
+            miniTranslated.Text = translated.Text;
+            if (miniStatus != null) miniStatus.Text = status.Text;
+        };
+        footer.Children.Add(go);
+        miniStatus = new TextBlock { Text = "F6 切换窗口", Foreground = MutedBrush,
+            FontSize = 9, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
+        Grid.SetColumn(miniStatus, 1); footer.Children.Add(miniStatus);
+        Grid.SetRow(footer, 3); panel.Children.Add(footer);
+        return panel;
     }
 
     static bool IsInteractiveElement(DependencyObject? element)
