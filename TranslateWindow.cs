@@ -16,8 +16,8 @@ using Microsoft.Win32;
 sealed class TranslateWindow : Window
 {
     const int WmHotkey = 0x0312;
-    const int HotkeyTranslate = 1, HotkeyToggle = 2;
-    const uint NoRepeat = 0x4000, VkF4 = 0x73, VkF5 = 0x74;
+    const int HotkeyTranslate = 1, HotkeyToggle = 2, HotkeyMini = 3;
+    const uint NoRepeat = 0x4000, VkF4 = 0x73, VkF5 = 0x74, VkF6 = 0x75;
     const int WmNcHitTest = 0x0084;
     const int HtLeft = 10, HtRight = 11, HtTop = 12, HtTopLeft = 13, HtTopRight = 14, HtBottom = 15, HtBottomLeft = 16, HtBottomRight = 17;
     [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
@@ -43,6 +43,9 @@ sealed class TranslateWindow : Window
     readonly Button translateButton = new();
     readonly CheckBox topmost = new();
     HwndSource? hwndSource;
+    Grid? rootSurface;
+    bool miniMode;
+    double normalWidth = 540, normalHeight = 460;
     CancellationTokenSource? request;
     Point dragStart;
     bool dragPending;
@@ -65,6 +68,11 @@ sealed class TranslateWindow : Window
         TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
 
         var root = new Grid { ClipToBounds = true, SnapsToDevicePixels = true };
+        rootSurface = root;
+        var miniContextItem = new MenuItem { Header = "切换迷你模式 (F6)" };
+        miniContextItem.Click += (_, _) => ToggleMiniMode();
+        root.ContextMenu = new ContextMenu();
+        root.ContextMenu.Items.Add(miniContextItem);
         // Drag the window by pressing and moving on any non-interactive surface.
         // Editors, selectors, scrollbars and buttons retain their normal behavior.
         root.PreviewMouseLeftButtonDown += (_, e) =>
@@ -110,6 +118,7 @@ sealed class TranslateWindow : Window
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new TextBlock { Text = "Translate", FontSize = 18, FontWeight = FontWeights.SemiBold,
             Foreground = WhiteBrush, VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.SizeAll };
         title.MouseLeftButtonDown += (_, e) => { if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); e.Handled = true; } };
@@ -119,10 +128,13 @@ sealed class TranslateWindow : Window
         RestoreBackgroundSettings();
         backgroundChoice.Margin = new Thickness(0, 0, 0, 0);
         Grid.SetColumn(backgroundChoice, 1); header.Children.Add(backgroundChoice);
+        var mini = HeaderButton("迷"); mini.ToolTip = "切换迷你模式 (F6)";
+        mini.Click += (_, _) => ToggleMiniMode();
+        Grid.SetColumn(mini, 2); header.Children.Add(mini);
         var minimize = HeaderButton("—"); minimize.Click += (_, _) => WindowState = WindowState.Minimized;
-        Grid.SetColumn(minimize, 2); header.Children.Add(minimize);
+        Grid.SetColumn(minimize, 3); header.Children.Add(minimize);
         var close = HeaderButton("×"); close.Click += (_, _) => Close();
-        Grid.SetColumn(close, 3); header.Children.Add(close);
+        Grid.SetColumn(close, 4); header.Children.Add(close);
         Grid.SetRow(header, 0); layout.Children.Add(header);
 
         var languageRow = new Grid { Margin = new Thickness(8, 3, 8, 8), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false, MinHeight = 48 };
@@ -234,12 +246,39 @@ sealed class TranslateWindow : Window
             hwndSource = HwndSource.FromHwnd(handle); hwndSource?.AddHook(WndProc);
             RegisterHotKey(handle, HotkeyTranslate, NoRepeat, VkF5);
             RegisterHotKey(handle, HotkeyToggle, NoRepeat, VkF4);
+            RegisterHotKey(handle, HotkeyMini, NoRepeat, VkF6);
         };
         Closed += (_, _) => {
             request?.Cancel(); var handle = new WindowInteropHelper(this).Handle;
             UnregisterHotKey(handle, HotkeyTranslate); UnregisterHotKey(handle, HotkeyToggle);
+            UnregisterHotKey(handle, HotkeyMini);
             hwndSource?.RemoveHook(WndProc);
         };
+    }
+
+    void ToggleMiniMode()
+    {
+        if (rootSurface == null) return;
+        if (!miniMode)
+        {
+            normalWidth = Math.Max(Width, 420);
+            normalHeight = Math.Max(Height, 340);
+            miniMode = true;
+            rootSurface.LayoutTransform = new ScaleTransform(0.18, 0.18);
+            MinWidth = 72;
+            MinHeight = 62;
+            Width = 97;
+            Height = 83;
+        }
+        else
+        {
+            miniMode = false;
+            rootSurface.LayoutTransform = Transform.Identity;
+            MinWidth = 420;
+            MinHeight = 340;
+            Width = normalWidth;
+            Height = normalHeight;
+        }
     }
 
     static bool IsInteractiveElement(DependencyObject? element)
@@ -688,7 +727,7 @@ sealed class TranslateWindow : Window
     static Button HeaderButton(string text)
     {
         return new Button {
-            Content = text == "—" ? "−" : "×", Width = 34, Height = 34,
+            Content = text == "—" ? "−" : text, Width = 34, Height = 34,
             Margin = new Thickness(6, 0, 0, 0),
             Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255)),
             Foreground = new SolidColorBrush(Color.FromRgb(248, 250, 255)),
@@ -803,7 +842,7 @@ sealed class TranslateWindow : Window
 
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WmNcHitTest && ResizeHitTest(hwnd, lParam, out int hit))
+        if (!miniMode && msg == WmNcHitTest && ResizeHitTest(hwnd, lParam, out int hit))
         {
             handled = true;
             return new IntPtr(hit);
@@ -816,6 +855,7 @@ sealed class TranslateWindow : Window
                 if (IsVisible) Hide();
                 else { Show(); WindowState = WindowState.Normal; Activate(); }
             }
+            if (wParam.ToInt32() == HotkeyMini) ToggleMiniMode();
         }
         return IntPtr.Zero;
     }
