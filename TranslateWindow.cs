@@ -642,45 +642,36 @@ sealed class TranslateWindow : Window
 
     static Style CreateGlassScrollBarStyle()
     {
+        // Keep WPF's built-in ScrollBar ControlTemplate. Building a Track with
+        // FrameworkElementFactory.AppendChild is invalid: Track is not a normal
+        // FrameworkElementFactory child and causes a startup XamlParseException.
+        // Override only the Thumb visual so native scrolling behavior is preserved.
         var thumbBorder = new FrameworkElementFactory(typeof(Border));
         thumbBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
         thumbBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(118, 255, 255, 255)));
         thumbBorder.SetValue(Border.MarginProperty, new Thickness(1, 2, 1, 2));
+
         var thumbTemplate = new ControlTemplate(typeof(Thumb)) { VisualTree = thumbBorder };
         var thumbStyle = new Style(typeof(Thumb));
         thumbStyle.Setters.Add(new Setter(Control.TemplateProperty, thumbTemplate));
         thumbStyle.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, 26.0));
         thumbStyle.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 6.0));
+
         var thumbHover = new Trigger { Property = Thumb.IsMouseOverProperty, Value = true };
-        thumbHover.Setters.Add(new Setter(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(178, 255, 255, 255))));
+        thumbHover.Setters.Add(new Setter(Border.BackgroundProperty,
+            new SolidColorBrush(Color.FromArgb(178, 255, 255, 255))));
         thumbTemplate.Triggers.Add(thumbHover);
+
         var thumbDragging = new Trigger { Property = Thumb.IsDraggingProperty, Value = true };
         thumbDragging.Setters.Add(new Setter(UIElement.OpacityProperty, 0.9));
         thumbTemplate.Triggers.Add(thumbDragging);
 
-        var track = new FrameworkElementFactory(typeof(Track));
-        track.Name = "PART_Track";
-        track.SetValue(Track.OrientationProperty, Orientation.Vertical);
-        track.SetValue(Track.IsDirectionReversedProperty, true);
-        track.SetBinding(Track.MinimumProperty, new System.Windows.Data.Binding(nameof(ScrollBar.Minimum)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        track.SetBinding(Track.MaximumProperty, new System.Windows.Data.Binding(nameof(ScrollBar.Maximum)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        track.SetBinding(Track.ValueProperty, new System.Windows.Data.Binding(nameof(ScrollBar.Value)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        track.SetBinding(Track.ViewportSizeProperty, new System.Windows.Data.Binding(nameof(ScrollBar.ViewportSize)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        // Track discovers its thumb through the PART_Thumb template part.
-        var thumb = new FrameworkElementFactory(typeof(Thumb));
-        thumb.Name = "PART_Thumb";
-        thumb.SetValue(FrameworkElement.StyleProperty, thumbStyle);
-        track.AppendChild(thumb);
-
-        var surface = new FrameworkElementFactory(typeof(Border));
-        surface.SetValue(Border.BackgroundProperty, Brushes.Transparent);
-        surface.AppendChild(track);
-        var template = new ControlTemplate(typeof(ScrollBar)) { VisualTree = surface };
         var style = new Style(typeof(ScrollBar));
         style.Setters.Add(new Setter(FrameworkElement.WidthProperty, 9.0));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
-        style.Setters.Add(new Setter(Control.TemplateProperty, template));
+        // The stock ScrollBar template resolves its Thumb from the ScrollBar resources.
+        style.Resources[typeof(Thumb)] = thumbStyle;
         return style;
     }
 
