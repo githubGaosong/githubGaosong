@@ -55,7 +55,7 @@ sealed class TranslateWindow : Window
     public TranslateWindow()
     {
         Title = "Translate";
-        Width = 540; Height = 460; MinWidth = 420; MinHeight = 340;
+        Width = 540; Height = 460; MinWidth = 320; MinHeight = 273;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
@@ -93,6 +93,7 @@ sealed class TranslateWindow : Window
             new Rect(0, 0, root.ActualWidth, root.ActualHeight), 26, 26);
         root.Children.Add(CreateBackdrop());
         var frame = new Border {
+            Width = 540, Height = 460,
             Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(26),
             BorderBrush = new LinearGradientBrush(Color.FromArgb(220,255,255,255), Color.FromArgb(85,180,220,255), 90),
@@ -104,7 +105,11 @@ sealed class TranslateWindow : Window
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1.08, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
-        frame.Child = layout; root.Children.Add(frame); Content = root;
+        frame.Child = layout;
+        var scaleHost = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.Both };
+        scaleHost.Child = frame;
+        root.Children.Add(scaleHost);
+        Content = root;
         var header = new Grid { Margin = new Thickness(8, 0, 4, 0), ClipToBounds = false };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
