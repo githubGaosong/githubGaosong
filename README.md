@@ -14,17 +14,17 @@ A lightweight Windows x64 desktop translator with a translucent, customizable WP
 
 ## Build
 
-Requires the **.NET 8 Desktop Runtime (Windows x64)**.
+**No .NET installation required.** The Windows x64 executable is self-contained and includes the .NET 8 runtime.
 
 ```powershell
-dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained false
+dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true
 ```
 
 The compact single-file application is generated at:
 
 `bin/Release/net8.0-windows/win-x64/publish/Translate online.exe`
 
-The framework-dependent publish keeps the executable small by using the installed .NET 8 Desktop Runtime rather than embedding the runtime in the application.
+The self-contained single-file publish bundles the .NET runtime and native dependencies into the executable. Download it, extract it if delivered in a ZIP, and double-click `Translate online.exe`; no separate .NET runtime installation is needed.
 
 ## Privacy and service notes
 
