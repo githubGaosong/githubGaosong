@@ -8,9 +8,10 @@
     <AssemblyName>Translate online</AssemblyName>
     <RootNamespace>TranslateOnline</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
+    <SelfContained>true</SelfContained>
     <UseAppHost>true</UseAppHost>
     <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <PublishReadyToRun>false</PublishReadyToRun>
