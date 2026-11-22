@@ -18,31 +18,30 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish self-contained portable single-file EXE
-        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -p:DebugSymbols=false -p:Optimize=true -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=false
-      - name: Verify standalone executable
+      - name: Publish self-contained Windows x64 folder
+        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=none -p:DebugSymbols=false -p:Optimize=true -p:PublishReadyToRun=false
+      - name: Verify portable application
         shell: pwsh
         run: |
           $publish = "bin/Release/net8.0-windows/win-x64/publish"
           $exe = Join-Path $publish "Translate online.exe"
           if (!(Test-Path $exe)) { throw "Translate online.exe was not produced." }
-          $files = @(Get-ChildItem $publish -File)
-          if ($files.Count -ne 1 -or $files[0].Name -ne "Translate online.exe") {
-            $files | ForEach-Object { Write-Host $_.Name }
-            throw "Publish output is not a single executable."
-          }
-          Write-Host ("Verified EXE size: {0} bytes" -f (Get-Item $exe).Length)
+          $files = @(Get-ChildItem $publish -File -Recurse)
+          if ($files.Count -lt 5) { throw "Self-contained publish output looks incomplete ($($files.Count) files)." }
+          Write-Host ("Verified EXE size: {0} bytes; publish files: {1}" -f (Get-Item $exe).Length, $files.Count)
+          Compress-Archive -Path "$publish/*" -DestinationPath "Translate-online-Windows-x64.zip" -Force
       - name: Upload Translate online
         uses: actions/upload-artifact@v4
         with:
           name: Translate-online-Windows-x64
-          path: "bin/Release/net8.0-windows/win-x64/publish/Translate online.exe"
+          path: "Translate-online-Windows-x64.zip"
           if-no-files-found: error
       - name: Publish GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
           name: Translate online v1.0.0
           target_commitish: main
           generate_release_notes: true
-          files: "bin/Release/net8.0-windows/win-x64/publish/Translate online.exe"
+          files: "Translate-online-Windows-x64.zip"
