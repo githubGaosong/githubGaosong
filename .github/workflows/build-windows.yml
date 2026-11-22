@@ -1,9 +1,11 @@
-name: Build Translator for Windows
+name: Build Translate online
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main", "release/translate-online-final"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
   build:
@@ -13,11 +15,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish compact self-contained EXE
-        run: dotnet publish Translator.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
-      - name: Upload Translator
+      - name: Publish compact framework-dependent single-file EXE
+        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=none -p:DebugSymbols=false -p:PublishReadyToRun=false
+      - name: Upload Translate online
         uses: actions/upload-artifact@v4
         with:
-          name: Translator-Windows-x64
-          path: bin/Release/net8.0-windows/win-x64/publish/Translator.exe
+          name: Translate-online-Windows-x64
+          path: "bin/Release/net8.0-windows/win-x64/publish/Translate online.exe"
           if-no-files-found: error

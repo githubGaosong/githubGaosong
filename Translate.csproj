@@ -5,13 +5,12 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>Translator</AssemblyName>
-    <RootNamespace>Translator</RootNamespace>
+    <AssemblyName>Translate online</AssemblyName>
+    <RootNamespace>TranslateOnline</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
+    <SelfContained>false</SelfContained>
+    <UseAppHost>true</UseAppHost>
     <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <PublishReadyToRun>false</PublishReadyToRun>
