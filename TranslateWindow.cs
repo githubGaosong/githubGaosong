@@ -18,10 +18,6 @@ sealed class TranslateWindow : Window
     const int WmHotkey = 0x0312;
     const int HotkeyTranslate = 1, HotkeyToggle = 2;
     const uint NoRepeat = 0x4000, VkF4 = 0x73, VkF5 = 0x74;
-    const int WmNcHitTest = 0x0084;
-    const int HtLeft = 10, HtRight = 11, HtTop = 12, HtTopLeft = 13, HtTopRight = 14, HtBottom = 15, HtBottomLeft = 16, HtBottomRight = 17;
-    [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
-    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
     [DllImport("user32.dll", SetLastError = true)] static extern bool RegisterHotKey(IntPtr hWnd, int id, uint modifiers, uint vk);
     [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
@@ -55,7 +51,7 @@ sealed class TranslateWindow : Window
     public TranslateWindow()
     {
         Title = "Translate";
-        Width = 540; Height = 460; MinWidth = 420; MinHeight = 340;
+        Width = 540; Height = 460; MinWidth = 80; MinHeight = 60;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
@@ -803,7 +799,7 @@ sealed class TranslateWindow : Window
 
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WmNcHitTest && ResizeHitTest(hwnd, lParam, out int hit))
+        if (msg == WindowResizeHelper.WmNcHitTest && WindowResizeHelper.TryHitTest(hwnd, lParam, out int hit))
         {
             handled = true;
             return new IntPtr(hit);
@@ -818,35 +814,6 @@ sealed class TranslateWindow : Window
             }
         }
         return IntPtr.Zero;
-    }
-
-    bool ResizeHitTest(IntPtr hwnd, IntPtr lParam, out int hit)
-    {
-        hit = 0;
-        if (!GetWindowRect(hwnd, out RECT r)) return false;
-        long packed = lParam.ToInt64();
-        int x = unchecked((short)(packed & 0xffff));
-        int y = unchecked((short)((packed >> 16) & 0xffff));
-        // Larger corner zones make diagonal resizing easier to grab.
-        const int edge = 30;
-        const int corner = 48;
-        bool left = x >= r.Left && x < r.Left + edge;
-        bool right = x < r.Right && x >= r.Right - edge;
-        bool top = y >= r.Top && y < r.Top + edge;
-        bool bottom = y < r.Bottom && y >= r.Bottom - edge;
-        bool nearLeft = x >= r.Left && x < r.Left + corner;
-        bool nearRight = x < r.Right && x >= r.Right - corner;
-        bool nearTop = y >= r.Top && y < r.Top + corner;
-        bool nearBottom = y < r.Bottom && y >= r.Bottom - corner;
-        if (nearTop && nearLeft) hit = HtTopLeft;
-        else if (nearTop && nearRight) hit = HtTopRight;
-        else if (nearBottom && nearLeft) hit = HtBottomLeft;
-        else if (nearBottom && nearRight) hit = HtBottomRight;
-        else if (left) hit = HtLeft;
-        else if (right) hit = HtRight;
-        else if (top) hit = HtTop;
-        else if (bottom) hit = HtBottom;
-        return hit != 0;
     }
 
     async Task TranslateAsync()
