@@ -27,7 +27,7 @@ jobs:
           $exe = Join-Path $publish "Translate online.exe"
           if (!(Test-Path $exe)) { throw "Translate online.exe was not produced." }
           $files = @(Get-ChildItem $publish -File -Recurse)
-          if ($files.Count -lt 5) { throw "Self-contained publish output looks incomplete ($($files.Count) files)." }
+          if ($files.Count -ne 1) { throw "Expected a single-file publish output, found $($files.Count) files." }
           Write-Host ("Verified EXE size: {0} bytes; publish files: {1}" -f (Get-Item $exe).Length, $files.Count)
           Compress-Archive -Path "$publish/*" -DestinationPath "Translate-online-Windows-x64.zip" -Force
       - name: Upload Translate online
