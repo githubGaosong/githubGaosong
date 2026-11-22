@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Media.Effects;
 using System.Windows.Interop;
+using System.Windows.Markup;
 using Microsoft.Win32;
 
 
@@ -346,6 +347,11 @@ sealed class TranslateWindow : Window
             }, 35)
         };
         backdropLayer.Background = uploadedBackground != null && choice == "用户图片" ? uploadedBackground : brush;
+        // Tint both editor scrollbars from the active skin instead of using Windows' default gray controls.
+        Color scrollbarTint = brush is LinearGradientBrush gradient && gradient.GradientStops.Count > 0
+            ? gradient.GradientStops[0].Color
+            : Color.FromRgb(75, 155, 150);
+        ApplyScrollbarTheme(scrollbarTint);
         // Keep the compact background selector visually tied to the active theme.
         if (backgroundChoice != null)
         {
@@ -630,15 +636,72 @@ sealed class TranslateWindow : Window
     static void StyleEditor(TextBox box, bool readOnly)
     {
         box.AcceptsReturn = true; box.AcceptsTab = true; box.TextWrapping = TextWrapping.Wrap;
-        box.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+        box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         box.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
         box.FontSize = 17; box.FontWeight = FontWeights.Medium; box.Padding = new Thickness(10,8,10,8);
         box.Foreground = Brushes.White; box.Background = Brushes.Transparent;
         box.BorderThickness = new Thickness(0); box.IsReadOnly = readOnly;
         box.CaretBrush = Brushes.White;
-        // Hide the visual scrollbar while retaining wheel, keyboard and programmatic scrolling.
+        // Scrollbar visuals are supplied by ApplyScrollbarTheme and follow the selected skin.
     }
 
+
+
+    void ApplyScrollbarTheme(Color tint)
+    {
+        // Keep the scrollbar subtle but visibly related to the selected background.
+        string ColorHex(byte alpha) => $"#{alpha:X2}{tint.R:X2}{tint.G:X2}{tint.B:X2}";
+        string thumb = ColorHex(185);
+        string hover = ColorHex(235);
+        string track = ColorHex(42);
+        string border = ColorHex(95);
+
+        string xaml = $@"<Style xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+            xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+            TargetType=""{{x:Type ScrollBar}}"">
+            <Setter Property=""Width"" Value=""8""/>
+            <Setter Property=""Background"" Value=""{track}""/>
+            <Setter Property=""Template"">
+                <Setter.Value>
+                    <ControlTemplate TargetType=""{{x:Type ScrollBar}}"">
+                        <Border Background=""{{TemplateBinding Background}}"" CornerRadius=""4""
+                                BorderBrush=""{border}"" BorderThickness=""0.5"">
+                            <Track x:Name=""PART_Track"" Orientation=""{{TemplateBinding Orientation}}""
+                                   IsDirectionReversed=""True"">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command=""{{x:Static ScrollBar.LineUpCommand}}""
+                                                  Opacity=""0"" IsTabStop=""False"" Focusable=""False""/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name=""SkinThumb"" Background=""{thumb}""
+                                           BorderThickness=""0"" MinHeight=""24"">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType=""{{x:Type Thumb}}"">
+                                                <Border x:Name=""ThumbSurface"" Background=""{{TemplateBinding Background}}""
+                                                        CornerRadius=""4"" Margin=""1""/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property=""IsMouseOver"" Value=""True"">
+                                                        <Setter TargetName=""ThumbSurface"" Property=""Background"" Value=""{hover}""/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command=""{{x:Static ScrollBar.LineDownCommand}}""
+                                                  Opacity=""0"" IsTabStop=""False"" Focusable=""False""/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>";
+        var themedStyle = (Style)XamlReader.Parse(xaml);
+        source.Resources[typeof(ScrollBar)] = themedStyle;
+        translated.Resources[typeof(ScrollBar)] = themedStyle;
+    }
 
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
