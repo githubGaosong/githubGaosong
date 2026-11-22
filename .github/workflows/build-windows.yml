@@ -19,7 +19,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Publish self-contained Windows x64 folder
-        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=none -p:DebugSymbols=false -p:Optimize=true -p:PublishReadyToRun=false
+        run: dotnet publish "Translate.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:DebugSymbols=false -p:Optimize=true -p:PublishReadyToRun=false
       - name: Verify portable application
         shell: pwsh
         run: |
