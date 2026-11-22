@@ -411,7 +411,7 @@ sealed class TranslateWindow : Window
     static void SetupLanguage(ComboBox box, string selected)
     {
         foreach (var language in LanguageCatalog.Languages) box.Items.Add(language.Name);
-        box.SelectedItem = selected == "自动检测" ? Languages[0].Name : Languages[2].Name;
+        box.SelectedItem = selected == "自动检测" ? LanguageCatalog.Languages[0].Name : LanguageCatalog.Languages[2].Name;
         box.Width = double.NaN; box.Height = 40; box.FontSize = 12; box.FontWeight = FontWeights.SemiBold;
         box.Foreground = Brushes.White; box.Background = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
         box.BorderBrush = new SolidColorBrush(Color.FromArgb(115, 225, 238, 255));
